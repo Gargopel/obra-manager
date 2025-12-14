@@ -69,7 +69,7 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-center space-x-4 text-sm">
+        <div className="flex flex-wrap gap-2 text-sm"> {/* Usar flex-wrap para evitar overflow de badges */}
           <Badge variant="secondary" className="flex items-center">
             <Wrench className="w-3 h-3 mr-1" /> {demand.service_type_name}
           </Badge>
@@ -80,7 +80,7 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
         
         <p className="text-sm text-foreground/80 line-clamp-3">{demand.description}</p>
 
-        <div className="flex justify-between items-center pt-2 border-t border-border/50">
+        <div className="flex justify-between items-center pt-2 border-t border-border/50 flex-wrap gap-2">
           <div className="text-xs text-muted-foreground">
             Registrado por: {creatorName}
           </div>
@@ -91,7 +91,7 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">Ver Imagem</Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px] md:max-w-xl lg:max-w-3xl">
+                <DialogContent className="w-[90vw] max-w-[90vw] md:max-w-xl lg:max-w-3xl"> {/* Ajustado para ser mais responsivo em mobile */}
                   <DialogHeader>
                     <DialogTitle>Imagem da Demanda</DialogTitle>
                   </DialogHeader>
@@ -143,7 +143,7 @@ const DemandsList: React.FC<DemandsListProps> = ({ filters }) => {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
       {demands.map(demand => (
         <DemandCard key={demand.id} demand={demand} />
       ))}
