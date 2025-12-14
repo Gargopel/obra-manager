@@ -33,7 +33,7 @@ const useDemands = (filters: Filters) => {
           *,
           service_types(name),
           rooms(name),
-          profiles(first_name, last_name)
+          profiles!user_id(first_name, last_name)
         `)
         .order('created_at', { ascending: false });
 
@@ -58,6 +58,8 @@ const useDemands = (filters: Filters) => {
 
       if (error) throw new Error(error.message);
       
+      // O Supabase deve agora tentar resolver o relacionamento usando a coluna 'user_id'
+      // que está ligada a auth.users, e então a profiles.
       return data as DemandDetail[];
     },
     refetchInterval: 10000, // Keep data fresh
