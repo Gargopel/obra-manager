@@ -51,7 +51,7 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
   const statusText = isPending ? 'Pendente' : 'Resolvido';
   const toggleButtonText = isPending ? 'Marcar como Resolvido' : 'Reabrir Demanda';
 
-  const creatorName = demand.profiles ? `${demand.profiles.first_name || ''} ${demand.profiles.last_name || ''}`.trim() : 'Desconhecido';
+  const creatorName = `${demand.user_first_name || ''} ${demand.user_last_name || ''}`.trim() || 'Desconhecido';
 
   return (
     <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50 transition-all duration-300 hover:shadow-2xl">
@@ -71,10 +71,10 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
       <CardContent className="space-y-3">
         <div className="flex items-center space-x-4 text-sm">
           <Badge variant="secondary" className="flex items-center">
-            <Wrench className="w-3 h-3 mr-1" /> {demand.service_types.name}
+            <Wrench className="w-3 h-3 mr-1" /> {demand.service_type_name}
           </Badge>
           <Badge variant="secondary" className="flex items-center">
-            <Home className="w-3 h-3 mr-1" /> {demand.rooms.name}
+            <Home className="w-3 h-3 mr-1" /> {demand.room_name}
           </Badge>
         </div>
         
@@ -106,7 +106,7 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
               className={isPending ? 'bg-green-600 hover:bg-green-700' : ''}
             >
               {updateStatusMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
                 isPending ? <CheckCircle className="w-4 h-4 mr-2" /> : <Clock className="w-4 h-4 mr-2" />
               )}
