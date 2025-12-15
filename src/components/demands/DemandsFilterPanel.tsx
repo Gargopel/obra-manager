@@ -50,7 +50,7 @@ const DemandsFilterPanel: React.FC<DemandsFilterPanelProps> = ({ onApplyFilters 
           <X className="w-4 h-4 mr-1" /> Limpar
         </Button>
       </CardHeader>
-      <CardContent className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         
         {/* Bloco */}
         <Select 

@@ -103,7 +103,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] md:max-w-lg backdrop-blur-md bg-white/70 dark:bg-gray-800/70 shadow-2xl border border-white/30 dark:border-gray-700/50">
+      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/70 dark:bg-gray-800/70 shadow-2xl border border-white/30 dark:border-gray-700/50">
         <DialogHeader>
           <DialogTitle>Registrar Nova Demanda</DialogTitle>
         </DialogHeader>
