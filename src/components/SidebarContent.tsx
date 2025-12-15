@@ -57,7 +57,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
         )}
         
         {/* Botão Meu Perfil */}
-        <Link to="/settings?tab=profile" onClick={onLinkClick}>
+        <Link to="/profile" onClick={onLinkClick}>
           <Button variant="ghost" className="w-full justify-start mb-2">
             <User className="w-4 h-4 mr-2" />
             Meu Perfil
