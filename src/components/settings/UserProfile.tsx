@@ -28,34 +28,23 @@ const UserProfile: React.FC = () => {
       
       // Upload da imagem se houver
       if (avatarFile) {
-        const fileExt = avatarFile.name.split('.').pop();
-        const fileName = `${user.id}/avatar.${fileExt}`;
-        const filePath = fileName;
+        // Em um ambiente real, aqui você faria uma chamada para seu backend
+        // para salvar a imagem localmente e retornar a URL
+        // Por enquanto, vamos simular isso criando uma URL base64
+        const reader = new FileReader();
+        const fileData = await new Promise<string>((resolve, reject) => {
+          reader.onload = (e) => {
+            if (e.target?.result) {
+              resolve(e.target.result as string);
+            } else {
+              reject(new Error('Falha ao ler o arquivo'));
+            }
+          };
+          reader.onerror = () => reject(new Error('Erro ao ler o arquivo'));
+          reader.readAsDataURL(avatarFile);
+        });
         
-        // Remover avatar antigo se existir
-        if (avatarUrl) {
-          const oldFileName = avatarUrl.split('/').pop();
-          if (oldFileName) {
-            await supabase.storage
-              .from('avatars')
-              .remove([`${user.id}/${oldFileName}`]);
-          }
-        }
-        
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(filePath, avatarFile, {
-            upsert: true
-          });
-          
-        if (uploadError) throw new Error('Erro ao fazer upload do avatar: ' + uploadError.message);
-        
-        // Obter URL pública
-        const { data: publicUrlData } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(filePath);
-          
-        avatarUrl = publicUrlData.publicUrl;
+        avatarUrl = fileData;
       }
       
       const { error: updateError } = await supabase
@@ -79,14 +68,27 @@ const UserProfile: React.FC = () => {
       // Atualizar o contexto de sessão
       queryClient.invalidateQueries({ queryKey: ['session'] });
     },
-    onError: (error) => {
-      showError(error.message);
+    onError: (error: Error) => {
+      console.error('Erro ao atualizar perfil:', error);
+      showError(error.message || 'Erro ao atualizar perfil.');
     },
   });
   
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      // Verificar tamanho do arquivo (máximo 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        showError('A imagem deve ter no máximo 2MB.');
+        return;
+      }
+      
+      // Verificar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        showError('Por favor, selecione um arquivo de imagem válido.');
+        return;
+      }
+      
       setAvatarFile(file);
       // Preview da imagem
       const reader = new FileReader();
@@ -139,6 +141,9 @@ const UserProfile: React.FC = () => {
                   Nova imagem selecionada: {avatarFile.name}
                 </p>
               )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Tamanho máximo: 2MB
+              </p>
             </div>
           </div>
           

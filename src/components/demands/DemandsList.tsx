@@ -17,19 +17,19 @@ interface DemandsListProps {
 const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
   const queryClient = useQueryClient();
   const isPending = demand.status === 'Pendente';
-
+  
   const updateStatusMutation = useMutation({
     mutationFn: async (newStatus: 'Pendente' | 'Resolvido') => {
       const updateData: { status: string; resolved_at: string | null } = {
         status: newStatus,
         resolved_at: newStatus === 'Resolvido' ? new Date().toISOString() : null,
       };
-
+      
       const { error } = await supabase
         .from('demands')
         .update(updateData)
         .eq('id', demand.id);
-
+        
       if (error) throw error;
     },
     onSuccess: (data, newStatus) => {
@@ -41,18 +41,18 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
       showError('Erro ao atualizar status: ' + error.message);
     },
   });
-
+  
   const handleToggleStatus = () => {
     const newStatus = isPending ? 'Resolvido' : 'Pendente';
     updateStatusMutation.mutate(newStatus);
   };
-
+  
   const statusColor = isPending ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600';
   const statusText = isPending ? 'Pendente' : 'Resolvido';
   const toggleButtonText = isPending ? 'Marcar como Resolvido' : 'Reabrir Demanda';
-
+  
   const creatorName = `${demand.user_first_name || ''} ${demand.user_last_name || ''}`.trim() || 'Desconhecido';
-
+  
   return (
     <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50 transition-all duration-300 hover:shadow-2xl">
       <CardHeader className="pb-2">
@@ -69,38 +69,43 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex flex-wrap gap-2 text-sm"> {/* Usar flex-wrap para evitar overflow de badges */}
+        <div className="flex flex-wrap gap-2 text-sm">
+          {/* Usar flex-wrap para evitar overflow de badges */}
           <Badge variant="secondary" className="flex items-center">
-            <Wrench className="w-3 h-3 mr-1" /> {demand.service_type_name}
+            <Wrench className="w-3 h-3 mr-1" />
+            {demand.service_type_name}
           </Badge>
           <Badge variant="secondary" className="flex items-center">
-            <Home className="w-3 h-3 mr-1" /> {demand.room_name}
+            <Home className="w-3 h-3 mr-1" />
+            {demand.room_name}
           </Badge>
         </div>
-        
         <p className="text-sm text-foreground/80 line-clamp-3">{demand.description}</p>
-
         <div className="flex justify-between items-center pt-2 border-t border-border/50 flex-wrap gap-2">
           <div className="text-xs text-muted-foreground">
             Registrado por: {creatorName}
           </div>
-          
           <div className="flex space-x-2">
             {demand.image_url && (
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm">Ver Imagem</Button>
                 </DialogTrigger>
-                <DialogContent className="w-[90vw] max-w-[90vw] md:max-w-xl lg:max-w-3xl"> {/* Ajustado para ser mais responsivo em mobile */}
+                <DialogContent className="w-[90vw] max-w-[90vw] md:max-w-xl lg:max-w-3xl">
+                  {/* Ajustado para ser mais responsivo em mobile */}
                   <DialogHeader>
                     <DialogTitle>Imagem da Demanda</DialogTitle>
                   </DialogHeader>
-                  <img src={demand.image_url} alt={`Imagem da demanda ${demand.id}`} className="w-full h-auto object-contain rounded-lg" />
+                  <img 
+                    src={demand.image_url} 
+                    alt={`Imagem da demanda ${demand.id}`} 
+                    className="w-full h-auto object-contain rounded-lg"
+                  />
                 </DialogContent>
               </Dialog>
             )}
             <Button 
-              onClick={handleToggleStatus} 
+              onClick={handleToggleStatus}
               disabled={updateStatusMutation.isPending}
               variant={isPending ? 'default' : 'secondary'}
               className={isPending ? 'bg-green-600 hover:bg-green-700' : ''}
@@ -121,7 +126,7 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
 
 const DemandsList: React.FC<DemandsListProps> = ({ filters }) => {
   const { data: demands, isLoading, error } = useDemands(filters);
-
+  
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -129,11 +134,11 @@ const DemandsList: React.FC<DemandsListProps> = ({ filters }) => {
       </div>
     );
   }
-
+  
   if (error) {
     return <div className="text-red-500">Erro ao carregar demandas: {error.message}</div>;
   }
-
+  
   if (!demands || demands.length === 0) {
     return (
       <div className="text-center p-10 border border-dashed rounded-lg text-muted-foreground backdrop-blur-sm bg-white/50 dark:bg-gray-800/50">
@@ -141,7 +146,7 @@ const DemandsList: React.FC<DemandsListProps> = ({ filters }) => {
       </div>
     );
   }
-
+  
   return (
     <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
       {demands.map(demand => (

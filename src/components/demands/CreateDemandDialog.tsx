@@ -24,14 +24,15 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
   const { data: configData, isLoading: isLoadingConfig } = useConfigData();
   const { user } = useSession();
   const queryClient = useQueryClient();
-
+  
   const [blockId, setBlockId] = useState('');
   const [apartmentNumber, setApartmentNumber] = useState('');
   const [serviceTypeId, setServiceTypeId] = useState('');
   const [roomId, setRoomId] = useState('');
   const [description, setDescription] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
-
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  
   const resetForm = () => {
     setBlockId('');
     setApartmentNumber('');
@@ -39,36 +40,38 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
     setRoomId('');
     setDescription('');
     setImageFile(null);
+    setImagePreview(null);
   };
-
+  
   const createDemandMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Usuário não autenticado.');
       if (!blockId || !apartmentNumber || !serviceTypeId || !roomId || !description) {
         throw new Error('Preencha todos os campos obrigatórios.');
       }
-
+      
       let imageUrl: string | null = null;
-
+      
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-        const filePath = `${user.id}/${fileName}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('demand_images')
-          .upload(filePath, imageFile);
-
-        if (uploadError) throw new Error('Erro ao fazer upload da imagem: ' + uploadError.message);
+        // Em um ambiente real, aqui você faria uma chamada para seu backend
+        // para salvar a imagem localmente e retornar a URL
+        // Por enquanto, vamos simular isso criando uma URL base64
+        const reader = new FileReader();
+        const fileData = await new Promise<string>((resolve, reject) => {
+          reader.onload = (e) => {
+            if (e.target?.result) {
+              resolve(e.target.result as string);
+            } else {
+              reject(new Error('Falha ao ler o arquivo'));
+            }
+          };
+          reader.onerror = () => reject(new Error('Erro ao ler o arquivo'));
+          reader.readAsDataURL(imageFile);
+        });
         
-        // Get public URL
-        const { data: publicUrlData } = supabase.storage
-          .from('demand_images')
-          .getPublicUrl(filePath);
-        
-        imageUrl = publicUrlData.publicUrl;
+        imageUrl = fileData;
       }
-
+      
       const { error: insertError } = await supabase
         .from('demands')
         .insert({
@@ -81,7 +84,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
           image_url: imageUrl,
           status: 'Pendente',
         });
-
+        
       if (insertError) throw new Error('Erro ao registrar demanda: ' + insertError.message);
     },
     onSuccess: () => {
@@ -95,12 +98,37 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
       showError(error.message);
     },
   });
-
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createDemandMutation.mutate();
   };
-
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      // Verificar tamanho do arquivo (máximo 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showError('A imagem deve ter no máximo 5MB.');
+        return;
+      }
+      
+      // Verificar tipo de arquivo
+      if (!file.type.startsWith('image/')) {
+        showError('Por favor, selecione um arquivo de imagem válido.');
+        return;
+      }
+      
+      setImageFile(file);
+      // Preview da imagem
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/70 dark:bg-gray-800/70 shadow-2xl border border-white/30 dark:border-gray-700/50">
@@ -108,7 +136,6 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
           <DialogTitle>Registrar Nova Demanda</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          
           {/* Localização */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -138,7 +165,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
               </Select>
             </div>
           </div>
-
+          
           {/* Tipo e Cômodo */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -168,13 +195,13 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
               </Select>
             </div>
           </div>
-
+          
           {/* Descrição */}
           <div className="space-y-2">
             <Label htmlFor="description">Descrição (Máx. {MAX_DESCRIPTION_LENGTH} palavras)</Label>
-            <Textarea
+            <Textarea 
               id="description"
-              value={description}
+              value={description} 
               onChange={(e) => {
                 const words = e.target.value.split(/\s+/).filter(Boolean);
                 if (words.length <= MAX_DESCRIPTION_LENGTH) {
@@ -188,21 +215,40 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
               {description.split(/\s+/).filter(Boolean).length} / {MAX_DESCRIPTION_LENGTH} palavras
             </p>
           </div>
-
+          
           {/* Upload de Imagem */}
           <div className="space-y-2">
             <Label htmlFor="image">Upload de Imagem/Foto</Label>
             <Input 
-              id="image" 
+              id="image"
               type="file" 
               accept="image/*" 
-              onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
+              onChange={handleImageChange}
             />
-            {imageFile && <p className="text-xs text-green-600">Arquivo selecionado: {imageFile.name}</p>}
+            {imageFile && (
+              <div className="mt-2">
+                <p className="text-xs text-green-600">Arquivo selecionado: {imageFile.name}</p>
+                {imagePreview && (
+                  <div className="mt-2">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-24 h-24 object-cover rounded-md border"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Tamanho máximo: 5MB
+            </p>
           </div>
-
+          
           <DialogFooter>
-            <Button type="submit" disabled={createDemandMutation.isPending}>
+            <Button 
+              type="submit" 
+              disabled={createDemandMutation.isPending}
+            >
               {createDemandMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : 'Registrar Demanda'}
