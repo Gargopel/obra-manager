@@ -12,12 +12,12 @@ const DemandsPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-foreground/90 backdrop-blur-sm p-2 rounded-lg">
+      <div className="flex flex-wrap justify-between items-center gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground/90 backdrop-blur-sm p-2 rounded-lg max-w-full">
           <ListChecks className="inline-block w-8 h-8 mr-2 text-primary" />
           Gerenciamento de Demandas
         </h1>
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 flex-shrink-0">
           <Button 
             variant="outline" 
             onClick={() => setIsFilterOpen(!isFilterOpen)}
