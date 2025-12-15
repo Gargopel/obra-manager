@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Plus, User, Mail, Save, X } from 'lucide-react';
+import { Loader2, Plus, User, Mail, Save, X, Edit } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge'; // Importando Badge
 
 interface Profile {
   id: string;
@@ -16,29 +16,22 @@ interface Profile {
   last_name: string | null;
   role: 'Admin' | 'Membro';
   email: string;
+  position?: string | null; // Adicionando position
 }
 
 const fetchUsersWithProfiles = async (): Promise<Profile[]> => {
   // Fetch profiles first
   const { data: profilesData, error: profilesError } = await supabase
     .from('profiles')
-    .select('id, first_name, last_name, role');
-
+    .select('id, first_name, last_name, role, position'); // Incluindo position
+  
   if (profilesError) throw profilesError;
 
-  // Fetch user emails from auth.users (requires service role, but we rely on RLS for profiles)
-  // Since we cannot directly query auth.users from client, we rely on the profiles table and assume email is available if needed, 
-  // but for simplicity and security constraints, we will only display data available via RLS on 'profiles'.
-  // NOTE: Supabase client-side RLS prevents direct access to auth.users emails. 
-  // We will simulate email retrieval by assuming a placeholder or relying on the user context if available, 
-  // but for this implementation, we will focus on profile data and role management.
-  
-  // To get emails, we would need an Edge Function or Service Role key, which is not available client-side.
-  // We will use a placeholder for email for now.
-  
+  // Para simplificar, vamos usar um placeholder para o email
+  // Em um cenário real, você pode querer buscar os emails via uma função edge ou serviço
   return profilesData.map(p => ({
     ...p,
-    email: `ID: ${p.id.substring(0, 8)}...`, // Placeholder for email
+    email: `ID: ${p.id.substring(0, 8)}...`, // Placeholder para email
   })) as Profile[];
 };
 
@@ -48,6 +41,9 @@ const ManageUsers: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingRole, setEditingRole] = useState<'Admin' | 'Membro'>('Membro');
+  const [editingFirstName, setEditingFirstName] = useState('');
+  const [editingLastName, setEditingLastName] = useState('');
+  const [editingPosition, setEditingPosition] = useState('');
 
   const { data: users, isLoading, error } = useQuery<Profile[], Error>({
     queryKey: ['usersWithProfiles'],
@@ -56,10 +52,6 @@ const ManageUsers: React.FC = () => {
 
   const createUserMutation = useMutation({
     mutationFn: async () => {
-      // NOTE: Client-side signup is usually disabled for Admin-only creation.
-      // Since we cannot use the Admin API (service role key) client-side, 
-      // we rely on the standard signup function, but the user must be created by the Admin.
-      // We assume the Admin is using this interface to create accounts.
       const { data, error } = await supabase.auth.signUp({
         email: newEmail,
         password: newPassword,
@@ -70,11 +62,8 @@ const ManageUsers: React.FC = () => {
           }
         }
       });
-
-      if (error) throw error;
       
-      // If successful, the handle_new_user trigger sets the default role 'Membro'.
-      // We don't need to manually update the role here unless we want to set them as Admin immediately.
+      if (error) throw error;
     },
     onSuccess: () => {
       showSuccess('Usuário criado com sucesso! Ele pode fazer login agora.');
@@ -87,28 +76,47 @@ const ManageUsers: React.FC = () => {
     },
   });
 
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ id, role }: { id: string; role: 'Admin' | 'Membro' }) => {
-      const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
-      if (error) throw error;
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({ id, first_name, last_name, position, role }: { 
+      id: string; 
+      first_name: string; 
+      last_name: string; 
+      position: string;
+      role: 'Admin' | 'Membro';
+    }) => {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ first_name, last_name, position, role })
+        .eq('id', id);
+      
+      if (profileError) throw profileError;
     },
     onSuccess: () => {
-      showSuccess('Função do usuário atualizada.');
+      showSuccess('Perfil do usuário atualizado.');
       setEditingId(null);
       queryClient.invalidateQueries({ queryKey: ['usersWithProfiles'] });
     },
     onError: (error) => {
-      showError('Erro ao atualizar função: ' + error.message);
+      showError('Erro ao atualizar perfil: ' + error.message);
     },
   });
 
-  const handleEditRole = (user: Profile) => {
+  const handleEditProfile = (user: Profile) => {
     setEditingId(user.id);
+    setEditingFirstName(user.first_name || '');
+    setEditingLastName(user.last_name || '');
+    setEditingPosition(user.position || '');
     setEditingRole(user.role);
   };
 
-  const handleSaveRole = (id: string) => {
-    updateRoleMutation.mutate({ id, role: editingRole });
+  const handleSaveProfile = (id: string) => {
+    updateProfileMutation.mutate({
+      id,
+      first_name: editingFirstName.trim(),
+      last_name: editingLastName.trim(),
+      position: editingPosition.trim(),
+      role: editingRole
+    });
   };
 
   if (isLoading) {
@@ -125,22 +133,21 @@ const ManageUsers: React.FC = () => {
         <CardTitle className="flex items-center"><User className="w-5 h-5 mr-2" /> Gerenciar Usuários</CardTitle>
       </CardHeader>
       <CardContent>
-        
         {/* Formulário de Criação de Usuário */}
         <div className="mb-8 p-4 border rounded-lg bg-accent/50">
           <h3 className="text-lg font-semibold mb-3">Criar Novo Usuário</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              placeholder="Email"
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
+            <Input 
+              placeholder="Email" 
+              type="email" 
+              value={newEmail} 
+              onChange={(e) => setNewEmail(e.target.value)} 
             />
-            <Input
-              placeholder="Senha (mínimo 6 caracteres)"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
+            <Input 
+              placeholder="Senha (mínimo 6 caracteres)" 
+              type="password" 
+              value={newPassword} 
+              onChange={(e) => setNewPassword(e.target.value)} 
             />
             <Button 
               onClick={() => createUserMutation.mutate()} 
@@ -159,6 +166,7 @@ const ManageUsers: React.FC = () => {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email/ID</TableHead>
+                <TableHead>Cargo</TableHead>
                 <TableHead className="w-[200px]">Função</TableHead>
                 <TableHead className="w-[100px] text-right">Ações</TableHead>
               </TableRow>
@@ -167,14 +175,43 @@ const ManageUsers: React.FC = () => {
               {users?.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
-                    {user.first_name || 'N/A'} {user.last_name || ''}
+                    {editingId === user.id ? (
+                      <div className="space-y-2">
+                        <Input 
+                          value={editingFirstName} 
+                          onChange={(e) => setEditingFirstName(e.target.value)} 
+                          placeholder="Primeiro nome"
+                        />
+                        <Input 
+                          value={editingLastName} 
+                          onChange={(e) => setEditingLastName(e.target.value)} 
+                          placeholder="Último nome"
+                        />
+                      </div>
+                    ) : (
+                      `${user.first_name || 'N/A'} ${user.last_name || ''}`
+                    )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {user.email}
                   </TableCell>
                   <TableCell>
                     {editingId === user.id ? (
-                      <Select value={editingRole} onValueChange={(val) => setEditingRole(val as 'Admin' | 'Membro')}>
+                      <Input 
+                        value={editingPosition} 
+                        onChange={(e) => setEditingPosition(e.target.value)} 
+                        placeholder="Cargo"
+                      />
+                    ) : (
+                      user.position || 'N/A'
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {editingId === user.id ? (
+                      <Select 
+                        value={editingRole} 
+                        onValueChange={(val) => setEditingRole(val as 'Admin' | 'Membro')}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -193,8 +230,8 @@ const ManageUsers: React.FC = () => {
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          onClick={() => handleSaveRole(user.id)}
-                          disabled={updateRoleMutation.isPending}
+                          onClick={() => handleSaveProfile(user.id)} 
+                          disabled={updateProfileMutation.isPending}
                         >
                           <Save className="w-4 h-4 text-green-600" />
                         </Button>
@@ -210,7 +247,7 @@ const ManageUsers: React.FC = () => {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        onClick={() => handleEditRole(user)}
+                        onClick={() => handleEditProfile(user)}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>

@@ -8,6 +8,8 @@ interface Profile {
   first_name: string | null;
   last_name: string | null;
   role: 'Admin' | 'Membro';
+  position: string | null; // Adicionando position
+  avatar_url: string | null; // Adicionando avatar_url
 }
 
 interface SessionContextType {
@@ -23,15 +25,16 @@ const SessionContext = createContext<SessionContextType | undefined>(undefined);
 const fetchProfile = async (userId: string): Promise<Profile | null> => {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, first_name, last_name, role')
+    .select('id, first_name, last_name, role, position, avatar_url') // Incluindo novos campos
     .eq('id', userId)
     .single();
-
+  
   if (error) {
     console.error('Error fetching profile:', error);
     showError('Erro ao carregar perfil do usuário.');
     return null;
   }
+  
   return data as Profile;
 };
 
@@ -40,23 +43,24 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
+  
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
-
+        
         if (currentSession?.user) {
           const userProfile = await fetchProfile(currentSession.user.id);
           setProfile(userProfile);
         } else {
           setProfile(null);
         }
+        
         setIsLoading(false);
       }
     );
-
+    
     // Fetch initial session
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       if (initialSession) {
@@ -66,14 +70,14 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       setIsLoading(false);
     });
-
+    
     return () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
-
+  
   const isAdmin = profile?.role === 'Admin';
-
+  
   return (
     <SessionContext.Provider value={{ session, user, profile, isLoading, isAdmin }}>
       {children}

@@ -1,17 +1,18 @@
 import React from 'react';
-import { Settings, Users, Wrench, Home, Lock } from 'lucide-react';
+import { Settings, Users, Wrench, Home, Lock, User } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { Navigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ManageUsers from '@/components/settings/ManageUsers';
 import ManageConfig from '@/components/settings/ManageConfig';
 import { Card } from '@/components/ui/card';
+import UserProfile from '@/components/settings/UserProfile';
 
 const SettingsPage: React.FC = () => {
   const { isAdmin, isLoading } = useSession();
-
+  
   if (isLoading) return null; // Wait for session loading
-
+  
   if (!isAdmin) {
     return (
       <Card className="p-8 text-center backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50">
@@ -22,31 +23,44 @@ const SettingsPage: React.FC = () => {
       </Card>
     );
   }
-
+  
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-foreground/90 backdrop-blur-sm p-2 rounded-lg">
         <Settings className="inline-block w-8 h-8 mr-2 text-primary" />
         Configurações do Sistema
       </h1>
-
-      <Tabs defaultValue="users" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
+      
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
+          <TabsTrigger value="profile" className="flex items-center"><User className="w-4 h-4 mr-2" /> Meu Perfil</TabsTrigger>
           <TabsTrigger value="users" className="flex items-center"><Users className="w-4 h-4 mr-2" /> Usuários</TabsTrigger>
           <TabsTrigger value="services" className="flex items-center"><Wrench className="w-4 h-4 mr-2" /> Tipos de Serviço</TabsTrigger>
           <TabsTrigger value="rooms" className="flex items-center"><Home className="w-4 h-4 mr-2" /> Cômodos</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="profile" className="mt-6">
+          <UserProfile />
+        </TabsContent>
         
         <TabsContent value="users" className="mt-6">
           <ManageUsers />
         </TabsContent>
         
         <TabsContent value="services" className="mt-6">
-          <ManageConfig configType="service_types" title="Gerenciar Tipos de Serviço" icon={Wrench} />
+          <ManageConfig 
+            configType="service_types" 
+            title="Gerenciar Tipos de Serviço" 
+            icon={Wrench} 
+          />
         </TabsContent>
         
         <TabsContent value="rooms" className="mt-6">
-          <ManageConfig configType="rooms" title="Gerenciar Cômodos" icon={Home} />
+          <ManageConfig 
+            configType="rooms" 
+            title="Gerenciar Cômodos" 
+            icon={Home} 
+          />
         </TabsContent>
       </Tabs>
     </div>
