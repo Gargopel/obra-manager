@@ -5,10 +5,14 @@ import { useNavigate } from 'react-router-dom';
 import { useSession } from '@/contexts/SessionContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { useAdminBootstrap } from '@/hooks/use-admin-bootstrap'; // Importando o hook
 
 const Login = () => {
   const navigate = useNavigate();
-  const { session, isLoading } = useSession();
+  const { session, isLoading, user } = useSession();
+  
+  // Hook de bootstrap: tenta promover o usuário se for admin@teste.com
+  useAdminBootstrap(user?.email);
 
   // Redireciona se já estiver logado
   if (!isLoading && session) {
@@ -56,13 +60,13 @@ const Login = () => {
                   password_label: 'Senha',
                   button_label: 'Entrar',
                   social_provider_text: 'Entrar com {{provider}}',
-                  link_text: 'Já tem uma conta? Faça login',
+                  link_text: 'Não tem uma conta? Cadastre-se', // Alterado para Cadastre-se
                 },
                 sign_up: {
                   email_label: 'Email',
                   password_label: 'Senha',
                   button_label: 'Cadastrar',
-                  link_text: 'Não tem uma conta? Cadastre-se',
+                  link_text: 'Já tem uma conta? Faça login',
                 },
                 forgotten_password: {
                   link_text: 'Esqueceu sua senha?',
