@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Settings, Users, Wrench, Home, Lock, User } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ManageUsers from '@/components/settings/ManageUsers';
 import ManageConfig from '@/components/settings/ManageConfig';
@@ -10,6 +10,12 @@ import UserProfile from '@/components/settings/UserProfile';
 
 const SettingsPage: React.FC = () => {
   const { isAdmin, isLoading } = useSession();
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Extrair parâmetro 'tab' da URL
+  const urlParams = new URLSearchParams(location.search);
+  const initialTab = urlParams.get('tab') || 'profile';
   
   if (isLoading) return null; // Wait for session loading
   
@@ -31,7 +37,7 @@ const SettingsPage: React.FC = () => {
         Configurações do Sistema
       </h1>
       
-      <Tabs defaultValue="profile" className="w-full">
+      <Tabs defaultValue={initialTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
           <TabsTrigger value="profile" className="flex items-center"><User className="w-4 h-4 mr-2" /> Meu Perfil</TabsTrigger>
           <TabsTrigger value="users" className="flex items-center"><Users className="w-4 h-4 mr-2" /> Usuários</TabsTrigger>

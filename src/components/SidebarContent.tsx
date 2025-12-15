@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ListChecks, Settings, LogOut, LayoutDashboard } from 'lucide-react';
+import { ListChecks, Settings, LogOut, LayoutDashboard, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,7 +12,7 @@ interface SidebarContentProps {
 
 const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
   const { isAdmin, profile } = useSession();
-
+  
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
@@ -48,13 +48,22 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
           </Link>
         ))}
       </nav>
-
+      
       <div className="mt-auto pt-4 border-t border-border/50">
         {profile && (
           <div className="mb-4 text-sm text-muted-foreground">
             Olá, {profile.first_name || 'Usuário'} ({profile.role})
           </div>
         )}
+        
+        {/* Botão Meu Perfil */}
+        <Link to="/settings?tab=profile" onClick={onLinkClick}>
+          <Button variant="ghost" className="w-full justify-start mb-2">
+            <User className="w-4 h-4 mr-2" />
+            Meu Perfil
+          </Button>
+        </Link>
+        
         <Button 
           variant="ghost" 
           className="w-full justify-start text-destructive hover:bg-destructive/10"
