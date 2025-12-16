@@ -6,35 +6,104 @@ import { Label } from '@/components/ui/label';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
-import { Loader2, Globe, Image } from 'lucide-react';
+import { Loader2, Globe, Image, Upload, X } from 'lucide-react';
 import useSiteConfig, { SiteConfig } from '@/hooks/use-site-config';
+
+// Função auxiliar para ler o arquivo como Data URL
+const readFileAsDataURL = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        resolve(e.target.result as string);
+      } else {
+        reject(new Error('Falha ao ler o arquivo'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Erro ao ler o arquivo'));
+    reader.readAsDataURL(file);
+  });
+};
 
 const ManageSiteConfig: React.FC = () => {
   const { data: config, isLoading, error } = useSiteConfig();
   const queryClient = useQueryClient();
   
   const [siteName, setSiteName] = useState('');
-  const [mainBgUrl, setMainBgUrl] = useState('');
-  const [loginBgUrl, setLoginBgUrl] = useState('');
+  
+  // Estados para Main Background
+  const [mainBgFile, setMainBgFile] = useState<File | null>(null);
+  const [mainBgPreview, setMainBgPreview] = useState<string | null>(null);
+  
+  // Estados para Login Background
+  const [loginBgFile, setLoginBgFile] = useState<File | null>(null);
+  const [loginBgPreview, setLoginBgPreview] = useState<string | null>(null);
   
   useEffect(() => {
     if (config) {
       setSiteName(config.site_name);
-      setMainBgUrl(config.main_background_url || '');
-      setLoginBgUrl(config.login_background_url || '');
+      // Se não houver um novo arquivo selecionado, use a URL do banco de dados como preview
+      if (!mainBgFile) setMainBgPreview(config.main_background_url || null);
+      if (!loginBgFile) setLoginBgPreview(config.login_background_url || null);
     }
-  }, [config]);
+  }, [config, mainBgFile, loginBgFile]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: React.Dispatch<React.SetStateAction<File | null>>, setPreview: React.Dispatch<React.SetStateAction<string | null>>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        showError('A imagem deve ter no máximo 5MB.');
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        showError('Por favor, selecione um arquivo de imagem válido.');
+        return;
+      }
+      
+      setFile(file);
+      readFileAsDataURL(file).then(setPreview).catch(() => setPreview(null));
+    }
+  };
+  
+  const handleClearFile = (setFile: React.Dispatch<React.SetStateAction<File | null>>, setPreview: React.Dispatch<React.SetStateAction<string | null>>, isMain: boolean) => {
+    setFile(null);
+    // Se limpar, volta para a URL do banco de dados, ou null se não houver
+    if (isMain) {
+      setMainBgPreview(config?.main_background_url || null);
+    } else {
+      setLoginBgPreview(config?.login_background_url || null);
+    }
+  };
 
   const updateConfigMutation = useMutation({
-    mutationFn: async (newConfig: Partial<SiteConfig>) => {
-      if (!config?.id) throw new Error('Configuração não encontrada.');
+    mutationFn: async () => {
+      if (!config || config.id === 'default') throw new Error('Configuração inválida ou não carregada.');
+      
+      let newMainBgUrl = config.main_background_url;
+      let newLoginBgUrl = config.login_background_url;
+      
+      // Processar upload da imagem principal
+      if (mainBgFile) {
+        newMainBgUrl = await readFileAsDataURL(mainBgFile);
+      } else if (mainBgPreview === null && config.main_background_url) {
+        // Se o preview foi limpo e não há novo arquivo, e havia um anterior
+        newMainBgUrl = null;
+      }
+      
+      // Processar upload da imagem de login
+      if (loginBgFile) {
+        newLoginBgUrl = await readFileAsDataURL(loginBgFile);
+      } else if (loginBgPreview === null && config.login_background_url) {
+        // Se o preview foi limpo e não há novo arquivo, e havia um anterior
+        newLoginBgUrl = null;
+      }
       
       const { error: updateError } = await supabase
         .from('site_config')
         .update({
-          site_name: newConfig.site_name,
-          main_background_url: newConfig.main_background_url || null,
-          login_background_url: newConfig.login_background_url || null,
+          site_name: siteName.trim(),
+          main_background_url: newMainBgUrl,
+          login_background_url: newLoginBgUrl,
         })
         .eq('id', config.id);
         
@@ -42,7 +111,10 @@ const ManageSiteConfig: React.FC = () => {
     },
     onSuccess: () => {
       showSuccess('Configurações do site atualizadas com sucesso!');
+      setMainBgFile(null);
+      setLoginBgFile(null);
       queryClient.invalidateQueries({ queryKey: ['siteConfig'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] }); // Força refresh do layout
     },
     onError: (error: Error) => {
       showError(error.message || 'Erro ao atualizar configurações.');
@@ -51,11 +123,11 @@ const ManageSiteConfig: React.FC = () => {
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateConfigMutation.mutate({
-      site_name: siteName.trim(),
-      main_background_url: mainBgUrl.trim(),
-      login_background_url: loginBgUrl.trim(),
-    });
+    if (!siteName.trim()) {
+      showError('O nome do site não pode ser vazio.');
+      return;
+    }
+    updateConfigMutation.mutate();
   };
   
   if (isLoading) {
@@ -66,6 +138,64 @@ const ManageSiteConfig: React.FC = () => {
     return <div className="text-red-500">Erro ao carregar configurações: {error.message}</div>;
   }
   
+  // Componente auxiliar para o campo de upload de imagem
+  const ImageUploadField = ({ id, label, file, preview, setFile, setPreview, isMain }: {
+    id: string;
+    label: string;
+    file: File | null;
+    preview: string | null;
+    setFile: React.Dispatch<React.SetStateAction<File | null>>;
+    setPreview: React.Dispatch<React.SetStateAction<string | null>>;
+    isMain: boolean;
+  }) => (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="flex items-center">
+        <Image className="w-4 h-4 mr-2" />
+        {label}
+      </Label>
+      <div className="flex items-center space-x-2">
+        <Input 
+          id={id}
+          type="file" 
+          accept="image/*" 
+          onChange={(e) => handleFileChange(e, setFile, setPreview)}
+          className="flex-1"
+        />
+        {(file || preview) && (
+          <Button 
+            variant="outline" 
+            size="icon" 
+            type="button"
+            onClick={() => handleClearFile(setFile, setPreview, isMain)}
+          >
+            <X className="w-4 h-4 text-destructive" />
+          </Button>
+        )}
+      </div>
+      
+      {(file || preview) && (
+        <div className="mt-2 flex items-center space-x-4">
+          {preview && (
+            <img 
+              src={preview} 
+              alt="Preview" 
+              className="w-24 h-24 object-cover rounded-md border"
+            />
+          )}
+          {file && (
+            <p className="text-xs text-green-600">Nova imagem selecionada: {file.name}</p>
+          )}
+          {!file && preview && (
+            <p className="text-xs text-muted-foreground">Imagem atual do banco de dados.</p>
+          )}
+        </div>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Tamanho máximo: 5MB.
+      </p>
+    </div>
+  );
+
   return (
     <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50">
       <CardHeader>
@@ -86,42 +216,26 @@ const ManageSiteConfig: React.FC = () => {
           </div>
           
           {/* Imagem de Fundo Principal */}
-          <div className="space-y-2">
-            <Label htmlFor="main-bg-url" className="flex items-center">
-              <Image className="w-4 h-4 mr-2" />
-              URL da Imagem de Fundo (Principal)
-            </Label>
-            <Input 
-              id="main-bg-url"
-              value={mainBgUrl} 
-              onChange={(e) => setMainBgUrl(e.target.value)} 
-              placeholder="URL da imagem de fundo para o Dashboard"
-            />
-            {mainBgUrl && (
-              <p className="text-xs text-muted-foreground">
-                Preview: <a href={mainBgUrl} target="_blank" rel="noopener noreferrer" className="underline">Clique para ver</a>
-              </p>
-            )}
-          </div>
+          <ImageUploadField
+            id="main-bg-upload"
+            label="Imagem de Fundo (Principal - Dashboard)"
+            file={mainBgFile}
+            preview={mainBgPreview}
+            setFile={setMainBgFile}
+            setPreview={setMainBgPreview}
+            isMain={true}
+          />
           
           {/* Imagem de Fundo Login */}
-          <div className="space-y-2">
-            <Label htmlFor="login-bg-url" className="flex items-center">
-              <Image className="w-4 h-4 mr-2" />
-              URL da Imagem de Fundo (Login)
-            </Label>
-            <Input 
-              id="login-bg-url"
-              value={loginBgUrl} 
-              onChange={(e) => setLoginBgUrl(e.target.value)} 
-              placeholder="URL da imagem de fundo para a página de Login"
-            />
-            {loginBgUrl && (
-              <p className="text-xs text-muted-foreground">
-                Preview: <a href={loginBgUrl} target="_blank" rel="noopener noreferrer" className="underline">Clique para ver</a>
-              </p>
-            )}
-          </div>
+          <ImageUploadField
+            id="login-bg-upload"
+            label="Imagem de Fundo (Login)"
+            file={loginBgFile}
+            preview={loginBgPreview}
+            setFile={setLoginBgFile}
+            setPreview={setLoginBgPreview}
+            isMain={false}
+          />
           
           <div className="flex justify-end">
             <Button 
