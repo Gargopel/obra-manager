@@ -90,7 +90,7 @@ const ManageSiteConfig: React.FC = () => {
       // Processar upload da imagem principal
       if (mainBgFile) {
         newMainBgUrl = await readFileAsDataURL(mainBgFile);
-      } else if (mainBgPreview === null && !isCreating) {
+      } else if (mainBgPreview === null && !isCreating && config.main_background_url) {
         // Se o preview foi limpo e estamos atualizando um registro existente
         newMainBgUrl = null;
       }
@@ -98,7 +98,7 @@ const ManageSiteConfig: React.FC = () => {
       // Processar upload da imagem de login
       if (loginBgFile) {
         newLoginBgUrl = await readFileAsDataURL(loginBgFile);
-      } else if (loginBgPreview === null && !isCreating) {
+      } else if (loginBgPreview === null && !isCreating && config.login_background_url) {
         // Se o preview foi limpo e estamos atualizando um registro existente
         newLoginBgUrl = null;
       }
@@ -131,9 +131,13 @@ const ManageSiteConfig: React.FC = () => {
       showSuccess('Configurações do site atualizadas com sucesso!');
       setMainBgFile(null);
       setLoginBgFile(null);
-      // Invalidate para buscar o ID real se foi uma criação
+      
+      // Forçar a revalidação de todos os dados de configuração
       queryClient.invalidateQueries({ queryKey: ['siteConfig'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboardData'] }); // Força refresh do layout
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] }); 
+      
+      // Forçar um refetch imediato para atualizar o estado local
+      queryClient.refetchQueries({ queryKey: ['siteConfig'] });
     },
     onError: (error: Error) => {
       showError(error.message || 'Erro ao atualizar configurações.');
