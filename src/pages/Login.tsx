@@ -5,11 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { useSession } from '@/contexts/SessionContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { useAdminBootstrap } from '@/hooks/use-admin-bootstrap'; // Importando o hook
+import { useAdminBootstrap } from '@/hooks/use-admin-bootstrap';
+import useSiteConfig from '@/hooks/use-site-config';
 
 const Login = () => {
   const navigate = useNavigate();
   const { session, isLoading, user } = useSession();
+  const { data: siteConfig } = useSiteConfig();
   
   // Hook de bootstrap: tenta promover o usuário se for admin@teste.com
   useAdminBootstrap(user?.email);
@@ -27,12 +29,19 @@ const Login = () => {
       </div>
     );
   }
+  
+  const loginBgStyle = siteConfig?.login_background_url 
+    ? { backgroundImage: `url(${siteConfig.login_background_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : {};
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-900">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-900 transition-all duration-500" 
+      style={loginBgStyle}
+    >
       <Card className="w-full max-w-md backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-2xl border border-white/30 dark:border-gray-700/50">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Gerenciamento de Obra</CardTitle>
+          <CardTitle className="text-2xl text-center">{siteConfig?.site_name || 'Gerenciamento de Obra'}</CardTitle>
         </CardHeader>
         <CardContent>
           <Auth

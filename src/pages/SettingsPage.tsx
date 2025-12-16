@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Settings, Users, Wrench, Home, Lock, User } from 'lucide-react';
+import { Settings, Users, Wrench, Home, Lock, User, Building, Globe } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,6 +7,8 @@ import ManageUsers from '@/components/settings/ManageUsers';
 import ManageConfig from '@/components/settings/ManageConfig';
 import { Card } from '@/components/ui/card';
 import UserProfile from '@/components/settings/UserProfile';
+import ManageBlocks from '@/components/settings/ManageBlocks';
+import ManageSiteConfig from '@/components/settings/ManageSiteConfig';
 
 const SettingsPage: React.FC = () => {
   const { isAdmin, isLoading } = useSession();
@@ -38,11 +40,13 @@ const SettingsPage: React.FC = () => {
       </h1>
       
       <Tabs defaultValue={initialTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
-          <TabsTrigger value="profile" className="flex items-center"><User className="w-4 h-4 mr-2" /> Meu Perfil</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
+          <TabsTrigger value="profile" className="flex items-center"><User className="w-4 h-4 mr-2" /> Perfil</TabsTrigger>
           <TabsTrigger value="users" className="flex items-center"><Users className="w-4 h-4 mr-2" /> Usuários</TabsTrigger>
-          <TabsTrigger value="services" className="flex items-center"><Wrench className="w-4 h-4 mr-2" /> Tipos de Serviço</TabsTrigger>
+          <TabsTrigger value="blocks" className="flex items-center"><Building className="w-4 h-4 mr-2" /> Blocos</TabsTrigger>
+          <TabsTrigger value="services" className="flex items-center"><Wrench className="w-4 h-4 mr-2" /> Serviços</TabsTrigger>
           <TabsTrigger value="rooms" className="flex items-center"><Home className="w-4 h-4 mr-2" /> Cômodos</TabsTrigger>
+          <TabsTrigger value="site" className="flex items-center"><Globe className="w-4 h-4 mr-2" /> Site</TabsTrigger>
         </TabsList>
         
         <TabsContent value="profile" className="mt-6">
@@ -51,6 +55,10 @@ const SettingsPage: React.FC = () => {
         
         <TabsContent value="users" className="mt-6">
           <ManageUsers />
+        </TabsContent>
+        
+        <TabsContent value="blocks" className="mt-6">
+          <ManageBlocks />
         </TabsContent>
         
         <TabsContent value="services" className="mt-6">
@@ -67,6 +75,10 @@ const SettingsPage: React.FC = () => {
             title="Gerenciar Cômodos" 
             icon={Home} 
           />
+        </TabsContent>
+        
+        <TabsContent value="site" className="mt-6">
+          <ManageSiteConfig />
         </TabsContent>
       </Tabs>
     </div>

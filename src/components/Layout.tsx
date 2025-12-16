@@ -5,9 +5,11 @@ import { Loader2 } from 'lucide-react';
 import Sidebar from './Sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileSidebar from './MobileSidebar';
+import useSiteConfig from '@/hooks/use-site-config';
 
 const Layout: React.FC = () => {
   const { session, isLoading } = useSession();
+  const { data: siteConfig } = useSiteConfig();
   const isMobile = useIsMobile();
 
   if (isLoading) {
@@ -21,9 +23,13 @@ const Layout: React.FC = () => {
   if (!session) {
     return <Navigate to="/login" replace />;
   }
+  
+  const mainBgStyle = siteConfig?.main_background_url 
+    ? { backgroundImage: `url(${siteConfig.main_background_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : {};
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950" style={mainBgStyle}>
       {/* Sidebar (Desktop) */}
       {!isMobile && <Sidebar />}
       
@@ -33,11 +39,13 @@ const Layout: React.FC = () => {
 
         {/* Main Content Area */}
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-          {/* Frutiger Aero inspired background effect */}
-          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-            <div className="w-96 h-96 bg-blue-400/30 dark:bg-blue-600/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob absolute top-10 left-10"></div>
-            <div className="w-96 h-96 bg-pink-400/30 dark:bg-pink-600/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000 absolute bottom-10 right-10"></div>
-          </div>
+          {/* Frutiger Aero inspired background effect (only if no custom background is set) */}
+          {!siteConfig?.main_background_url && (
+            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+              <div className="w-96 h-96 bg-blue-400/30 dark:bg-blue-600/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob absolute top-10 left-10"></div>
+              <div className="w-96 h-96 bg-pink-400/30 dark:bg-pink-600/30 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000 absolute bottom-10 right-10"></div>
+            </div>
+          )}
 
           <div className="relative z-10">
             <Outlet />

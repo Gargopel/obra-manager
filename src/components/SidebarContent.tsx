@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
+import useSiteConfig from '@/hooks/use-site-config';
 
 interface SidebarContentProps {
   onLinkClick?: () => void;
@@ -12,6 +13,7 @@ interface SidebarContentProps {
 
 const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
   const { isAdmin, profile } = useSession();
+  const { data: siteConfig } = useSiteConfig();
   
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -32,7 +34,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
   return (
     <div className="w-full h-full p-4 flex flex-col">
       <div className="text-2xl font-bold mb-8 text-primary dark:text-primary-foreground">
-        Obra Manager
+        {siteConfig?.site_name || 'Obra Manager'}
       </div>
       
       <nav className="flex-1 space-y-2">
