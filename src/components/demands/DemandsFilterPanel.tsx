@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { BLOCKS, APARTMENT_NUMBERS, DEMAND_STATUSES } from '@/utils/construction-structure';
+import { APARTMENT_NUMBERS, DEMAND_STATUSES } from '@/utils/construction-structure';
 import useConfigData from '@/hooks/use-config-data';
 import { Filter, X } from 'lucide-react';
 
@@ -56,14 +56,15 @@ const DemandsFilterPanel: React.FC<DemandsFilterPanelProps> = ({ onApplyFilters 
         <Select 
           value={currentFilters.block_id || 'all'} 
           onValueChange={(val) => handleFilterChange('block_id', val)}
+          disabled={isLoadingConfig}
         >
           <SelectTrigger>
             <SelectValue placeholder="Bloco" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os Blocos</SelectItem>
-            {BLOCKS.map(block => (
-              <SelectItem key={block} value={block}>{`Bloco ${block}`}</SelectItem>
+            {configData?.blocks.map(block => (
+              <SelectItem key={block.id} value={block.name}>{`Bloco ${block.name}`}</SelectItem>
             ))}
           </SelectContent>
         </Select>
