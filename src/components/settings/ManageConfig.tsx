@@ -26,6 +26,15 @@ const ManageConfig: React.FC<ManageConfigProps> = ({ configType, title, icon: Ic
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
 
+  // Helper function to extract the noun (e.g., 'Serviço' or 'Cômodo') for toast messages and placeholders
+  const getItemNoun = () => {
+    const parts = title.split(' ');
+    // We assume the noun is the last word of the title.
+    return parts.pop() || 'Item';
+  };
+  
+  const itemName = getItemNoun();
+
   const { data: items, isLoading, error } = useQuery<ConfigItem[], Error>({
     queryKey: [configType],
     queryFn: async () => {
@@ -41,7 +50,7 @@ const ManageConfig: React.FC<ManageConfigProps> = ({ configType, title, icon: Ic
       if (error) throw error;
     },
     onSuccess: () => {
-      showSuccess(`${title.split(' ')[2]} criado com sucesso.`);
+      showSuccess(`${itemName} criado com sucesso.`);
       setNewItemName('');
       queryClient.invalidateQueries({ queryKey: [configType] });
       queryClient.invalidateQueries({ queryKey: ['configData'] });
@@ -57,7 +66,7 @@ const ManageConfig: React.FC<ManageConfigProps> = ({ configType, title, icon: Ic
       if (error) throw error;
     },
     onSuccess: () => {
-      showSuccess(`${title.split(' ')[2]} atualizado com sucesso.`);
+      showSuccess(`${itemName} atualizado com sucesso.`);
       setEditingId(null);
       queryClient.invalidateQueries({ queryKey: [configType] });
       queryClient.invalidateQueries({ queryKey: ['configData'] });
@@ -73,7 +82,7 @@ const ManageConfig: React.FC<ManageConfigProps> = ({ configType, title, icon: Ic
       if (error) throw error;
     },
     onSuccess: () => {
-      showSuccess(`${title.split(' ')[2]} excluído com sucesso.`);
+      showSuccess(`${itemName} excluído com sucesso.`);
       queryClient.invalidateQueries({ queryKey: [configType] });
       queryClient.invalidateQueries({ queryKey: ['configData'] });
     },
@@ -111,7 +120,7 @@ const ManageConfig: React.FC<ManageConfigProps> = ({ configType, title, icon: Ic
         {/* Formulário de Criação */}
         <div className="flex space-x-2 mb-6">
           <Input
-            placeholder={`Novo nome do ${title.split(' ')[2].toLowerCase()}`}
+            placeholder={`Novo nome do ${itemName.toLowerCase()}`}
             value={newItemName}
             onChange={(e) => setNewItemName(e.target.value)}
             className="flex-1"
