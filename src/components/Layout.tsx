@@ -24,8 +24,9 @@ const Layout: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
   
+  // Usando a URL Base64 ou URL externa diretamente
   const mainBgStyle = siteConfig?.main_background_url 
-    ? { backgroundImage: `url(${siteConfig.main_background_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    ? { backgroundImage: `url(${siteConfig.main_background_url})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' } // Adicionando backgroundAttachment: 'fixed'
     : {};
 
   return (

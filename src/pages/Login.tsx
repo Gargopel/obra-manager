@@ -30,6 +30,7 @@ const Login = () => {
     );
   }
   
+  // Usando a URL Base64 ou URL externa diretamente
   const loginBgStyle = siteConfig?.login_background_url 
     ? { backgroundImage: `url(${siteConfig.login_background_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : {};
