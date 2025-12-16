@@ -77,7 +77,10 @@ const ManageSiteConfig: React.FC = () => {
 
   const updateConfigMutation = useMutation({
     mutationFn: async () => {
-      if (!config || config.id === 'default') throw new Error('Configuração inválida ou não carregada.');
+      // Verifica se o ID é um UUID válido antes de tentar a mutação
+      if (!config || config.id === 'fallback_no_data') {
+        throw new Error('Configuração inválida ou não carregada. Verifique se a tabela site_config foi inicializada corretamente.');
+      }
       
       let newMainBgUrl = config.main_background_url;
       let newLoginBgUrl = config.login_background_url;

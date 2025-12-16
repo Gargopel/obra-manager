@@ -12,16 +12,22 @@ const useSiteConfig = () => {
   return useQuery<SiteConfig, Error>({
     queryKey: ['siteConfig'],
     queryFn: async () => {
+      // Buscamos a primeira linha (deve haver apenas uma)
       const { data, error } = await supabase
         .from('site_config')
         .select('*')
-        .single();
+        .limit(1)
+        .maybeSingle(); // Usamos maybeSingle para lidar com 0 ou 1 resultado
 
       if (error) {
-        // Fallback default config if table is empty or error occurs
         console.error("Error fetching site config, using defaults:", error);
+        throw new Error(error.message); // Lançar erro para que o useQuery o capture
+      }
+      
+      if (!data) {
+        // Se não houver dados (tabela vazia, apesar do INSERT inicial), retornamos um fallback sem ID para mutação
         return {
-          id: 'default',
+          id: 'fallback_no_data', // Usar um ID diferente de 'default' para evitar confusão, mas ainda inválido para mutação
           site_name: 'Obra Manager',
           main_background_url: null,
           login_background_url: null,
