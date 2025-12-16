@@ -77,45 +77,61 @@ const ManageSiteConfig: React.FC = () => {
 
   const updateConfigMutation = useMutation({
     mutationFn: async () => {
-      // Verifica se o ID é um UUID válido antes de tentar a mutação
-      if (!config || config.id === 'fallback_no_data') {
+      
+      const isCreating = config?.id === 'fallback_no_data';
+      
+      if (!config || (!isCreating && !config.id)) {
         throw new Error('Configuração inválida ou não carregada. Verifique se a tabela site_config foi inicializada corretamente.');
       }
       
-      let newMainBgUrl = config.main_background_url;
-      let newLoginBgUrl = config.login_background_url;
+      let newMainBgUrl = isCreating ? null : config.main_background_url;
+      let newLoginBgUrl = isCreating ? null : config.login_background_url;
       
       // Processar upload da imagem principal
       if (mainBgFile) {
         newMainBgUrl = await readFileAsDataURL(mainBgFile);
-      } else if (mainBgPreview === null && config.main_background_url) {
-        // Se o preview foi limpo e não há novo arquivo, e havia um anterior
+      } else if (mainBgPreview === null && !isCreating) {
+        // Se o preview foi limpo e estamos atualizando um registro existente
         newMainBgUrl = null;
       }
       
       // Processar upload da imagem de login
       if (loginBgFile) {
         newLoginBgUrl = await readFileAsDataURL(loginBgFile);
-      } else if (loginBgPreview === null && config.login_background_url) {
-        // Se o preview foi limpo e não há novo arquivo, e havia um anterior
+      } else if (loginBgPreview === null && !isCreating) {
+        // Se o preview foi limpo e estamos atualizando um registro existente
         newLoginBgUrl = null;
       }
       
-      const { error: updateError } = await supabase
-        .from('site_config')
-        .update({
-          site_name: siteName.trim(),
-          main_background_url: newMainBgUrl,
-          login_background_url: newLoginBgUrl,
-        })
-        .eq('id', config.id);
+      const payload = {
+        site_name: siteName.trim(),
+        main_background_url: newMainBgUrl,
+        login_background_url: newLoginBgUrl,
+      };
+      
+      if (isCreating) {
+        // INSERT the first row
+        const { error: insertError } = await supabase
+          .from('site_config')
+          .insert(payload);
+          
+        if (insertError) throw insertError;
         
-      if (updateError) throw updateError;
+      } else {
+        // UPDATE the existing row
+        const { error: updateError } = await supabase
+          .from('site_config')
+          .update(payload)
+          .eq('id', config.id);
+          
+        if (updateError) throw updateError;
+      }
     },
     onSuccess: () => {
       showSuccess('Configurações do site atualizadas com sucesso!');
       setMainBgFile(null);
       setLoginBgFile(null);
+      // Invalidate para buscar o ID real se foi uma criação
       queryClient.invalidateQueries({ queryKey: ['siteConfig'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] }); // Força refresh do layout
     },
