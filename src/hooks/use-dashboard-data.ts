@@ -11,6 +11,13 @@ interface Demand {
   service_types: { name: string };
 }
 
+interface Painting {
+  id: string;
+  status: 'Em Andamento' | 'Finalizado' | 'Entregue';
+  block_id: string;
+  location: string;
+}
+
 interface DashboardData {
   totalDemands: number;
   pendingDemands: number;
@@ -19,6 +26,11 @@ interface DashboardData {
   completionPercentage: number;
   demandsByService: { name: string; count: number }[];
   demandsByBlock: { block: string; count: number }[];
+  
+  // Dados de Pintura
+  totalPaintings: number;
+  paintingsByStatus: { name: string; count: number }[];
+  paintingsByLocation: { name: string; count: number }[];
 }
 
 const calculateResolutionTime = (demands: Demand[]): string => {
@@ -49,11 +61,12 @@ const useDashboardData = () => {
   return useQuery<DashboardData, Error>({
     queryKey: ['dashboardData'],
     queryFn: async () => {
-      const { data: demands, error } = await supabase
+      // 1. Fetch Demands Data
+      const { data: demands, error: demandsError } = await supabase
         .from('demands')
         .select('id, status, created_at, resolved_at, block_id, service_types(name)');
 
-      if (error) throw new Error(error.message);
+      if (demandsError) throw new Error(demandsError.message);
 
       const totalDemands = demands.length;
       const pendingDemands = demands.filter(d => d.status === 'Pendente').length;
@@ -80,6 +93,30 @@ const useDashboardData = () => {
         block,
         count: blockCounts[block] || 0,
       }));
+      
+      // 2. Fetch Paintings Data
+      const { data: paintings, error: paintingsError } = await supabase
+        .from('paintings')
+        .select('id, status, block_id, location');
+        
+      if (paintingsError) throw new Error(paintingsError.message);
+      
+      const totalPaintings = paintings.length;
+      
+      // Paintings by Status
+      const paintingStatusCounts = paintings.reduce((acc, p) => {
+        acc[p.status] = (acc[p.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      const paintingsByStatus = Object.entries(paintingStatusCounts).map(([name, count]) => ({ name, count }));
+      
+      // Paintings by Location
+      const paintingLocationCounts = paintings.reduce((acc, p) => {
+        acc[p.location] = (acc[p.location] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      const paintingsByLocation = Object.entries(paintingLocationCounts).map(([name, count]) => ({ name, count }));
+
 
       return {
         totalDemands,
@@ -89,6 +126,10 @@ const useDashboardData = () => {
         completionPercentage,
         demandsByService,
         demandsByBlock,
+        
+        totalPaintings,
+        paintingsByStatus,
+        paintingsByLocation,
       };
     },
     refetchInterval: 15000, // Refresh data every 15 seconds
