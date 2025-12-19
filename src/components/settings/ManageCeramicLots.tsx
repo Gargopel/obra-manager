@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import useConfigData from '@/hooks/use-config-data';
 import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
+import { CERAMIC_LOCATIONS } from '@/utils/construction-structure';
 
 interface CeramicLot {
   id: string;
@@ -20,6 +21,7 @@ interface CeramicLot {
   product_name: string | null;
   purchase_date: string | null;
   created_at: string;
+  location: 'Apartamentos' | 'Circulação' | 'Sacada';
 }
 
 const fetchCeramicLots = async (blockId: string): Promise<CeramicLot[]> => {
@@ -43,6 +45,7 @@ const ManageCeramicLots: React.FC = () => {
   const [newManufacturer, setNewManufacturer] = useState('');
   const [newProductName, setNewProductName] = useState('');
   const [newPurchaseDate, setNewPurchaseDate] = useState(''); // YYYY-MM-DD format
+  const [newLocation, setNewLocation] = useState<string>(CERAMIC_LOCATIONS[0]); // Novo estado para Location
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingLot, setEditingLot] = useState<Partial<CeramicLot>>({});
@@ -62,7 +65,7 @@ const ManageCeramicLots: React.FC = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedBlockId || !newLotNumber) throw new Error('Selecione o bloco e insira o número do lote.');
+      if (!selectedBlockId || !newLotNumber || !newLocation) throw new Error('Selecione o bloco, o local e insira o número do lote.');
       
       const payload = {
         block_id: selectedBlockId,
@@ -70,6 +73,7 @@ const ManageCeramicLots: React.FC = () => {
         manufacturer: newManufacturer.trim() || null,
         product_name: newProductName.trim() || null,
         purchase_date: newPurchaseDate || null,
+        location: newLocation, // Adicionando location
       };
       
       const { error } = await supabase.from('ceramic_lots').insert(payload);
@@ -81,6 +85,7 @@ const ManageCeramicLots: React.FC = () => {
       setNewManufacturer('');
       setNewProductName('');
       setNewPurchaseDate('');
+      // Mantém newLocation
       queryClient.invalidateQueries({ queryKey: ['ceramicLots', selectedBlockId] });
     },
     onError: (error) => {
@@ -99,6 +104,7 @@ const ManageCeramicLots: React.FC = () => {
           manufacturer: lot.manufacturer,
           product_name: lot.product_name,
           purchase_date: lot.purchase_date,
+          location: lot.location, // Atualizando location
         })
         .eq('id', lot.id);
       
@@ -135,10 +141,10 @@ const ManageCeramicLots: React.FC = () => {
   };
 
   const handleSave = () => {
-    if (editingLot.lot_number) {
+    if (editingLot.lot_number && editingLot.location) {
       updateMutation.mutate(editingLot);
     } else {
-      showError('O número do lote não pode ser vazio.');
+      showError('O número do lote e o local não podem ser vazios.');
     }
   };
   
@@ -179,7 +185,22 @@ const ManageCeramicLots: React.FC = () => {
             {/* Formulário de Criação */}
             <div className="mb-8 p-4 border rounded-lg bg-accent/50">
               <h3 className="text-lg font-semibold mb-3">Adicionar Novo Lote ao Bloco {selectedBlockName}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                {/* Novo campo de Localização */}
+                <div className="space-y-2 md:col-span-1">
+                  <Label htmlFor="new-location" className="sr-only">Localização</Label>
+                  <Select value={newLocation} onValueChange={setNewLocation}>
+                    <SelectTrigger id="new-location">
+                      <SelectValue placeholder="Localização" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CERAMIC_LOCATIONS.map(loc => (
+                        <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <Input 
                   placeholder="Nº do Lote (Obrigatório)" 
                   value={newLotNumber} 
@@ -219,6 +240,7 @@ const ManageCeramicLots: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Local</TableHead> {/* Nova coluna */}
                     <TableHead>Lote</TableHead>
                     <TableHead>Produto</TableHead>
                     <TableHead>Fabricante</TableHead>
@@ -228,10 +250,29 @@ const ManageCeramicLots: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
-                    <TableRow><TableCell colSpan={5} className="text-center"><Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" /></TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center"><Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" /></TableCell></TableRow>
                   ) : lots && lots.length > 0 ? (
                     lots.map((lot) => (
                       <TableRow key={lot.id}>
+                        <TableCell>
+                          {editingId === lot.id ? (
+                            <Select 
+                              value={editingLot.location || ''} 
+                              onValueChange={(val) => handleLotChange('location', val)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {CERAMIC_LOCATIONS.map(loc => (
+                                  <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            lot.location
+                          )}
+                        </TableCell>
                         <TableCell className="font-medium">
                           {editingId === lot.id ? (
                             <Input 
@@ -315,7 +356,7 @@ const ManageCeramicLots: React.FC = () => {
                       </TableRow>
                     ))
                   ) : (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Nenhum lote cadastrado para este bloco.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhum lote cadastrado para este bloco.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>

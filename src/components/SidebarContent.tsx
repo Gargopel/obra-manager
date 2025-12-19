@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ListChecks, Settings, LogOut, LayoutDashboard, User, Building } from 'lucide-react';
+import { ListChecks, Settings, LogOut, LayoutDashboard, User, BrickWall } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,7 +25,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { name: 'Demandas', icon: ListChecks, path: '/demands' },
-    { name: 'Blocos', icon: Building, path: '/blocks' }, // Novo item de navegação
+    { name: 'Cerâmicas', icon: BrickWall, path: '/ceramics' }, // Item de navegação atualizado
   ];
 
   if (isAdmin) {

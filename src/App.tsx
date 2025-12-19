@@ -11,7 +11,7 @@ import Layout from "./components/Layout";
 import DemandsPage from "./pages/DemandsPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
-import BlocksPage from "./pages/BlocksPage"; // Importando a nova página
+import CeramicsPage from "./pages/CeramicsPage"; // Importando a página renomeada
 
 const queryClient = new QueryClient();
 
@@ -28,7 +28,7 @@ const App = () => (
             <Route element={<Layout />}>
               <Route path="/" element={<Index />} />
               <Route path="/demands" element={<DemandsPage />} />
-              <Route path="/blocks" element={<BlocksPage />} /> {/* Nova rota */}
+              <Route path="/ceramics" element={<CeramicsPage />} /> {/* Rota atualizada */}
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

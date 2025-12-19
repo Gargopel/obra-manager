@@ -9,6 +9,7 @@ export interface CeramicLot {
   product_name: string | null;
   purchase_date: string | null;
   created_at: string;
+  location: 'Apartamentos' | 'Circulação' | 'Sacada'; // Novo campo
 }
 
 const fetchCeramicLotsByBlockId = async (blockId: string): Promise<CeramicLot[]> => {

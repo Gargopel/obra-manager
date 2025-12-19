@@ -6,7 +6,7 @@ import useConfigData from '@/hooks/use-config-data';
 import { Loader2 } from 'lucide-react';
 import CeramicLotViewer from '@/components/blocks/CeramicLotViewer';
 
-const BlocksPage: React.FC = () => {
+const CeramicsPage: React.FC = () => {
   const { data: configData, isLoading, error } = useConfigData();
 
   if (isLoading) {
@@ -22,8 +22,8 @@ const BlocksPage: React.FC = () => {
   return (
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-foreground/90 backdrop-blur-sm p-2 rounded-lg">
-        <Building className="inline-block w-8 h-8 mr-2 text-primary" />
-        Rastreabilidade de Blocos
+        <BrickWall className="inline-block w-8 h-8 mr-2 text-primary" />
+        Rastreabilidade de Cerâmicas
       </h1>
 
       <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50">
@@ -56,4 +56,4 @@ const BlocksPage: React.FC = () => {
   );
 };
 
-export default BlocksPage;
+export default CeramicsPage;

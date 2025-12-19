@@ -8,7 +8,7 @@ export const APARTMENTS_PER_BLOCK = 20;
 export const generateApartmentNumbers = (): string[] => {
   const apartmentNumbers: string[] = [];
   for (let floor = 1; floor <= 5; floor++) {
-    for (let unit = 1; unit <= 4; unit++) {
+    for (for (let unit = 1; unit <= 4; unit++) {
       apartmentNumbers.push(`${floor}0${unit}`);
     }
   }
@@ -18,3 +18,6 @@ export const generateApartmentNumbers = (): string[] => {
 export const APARTMENT_NUMBERS = generateApartmentNumbers();
 
 export const DEMAND_STATUSES = ['Pendente', 'Resolvido'];
+
+// Locais de aplicação da cerâmica
+export const CERAMIC_LOCATIONS = ['Apartamentos', 'Circulação', 'Sacada'];

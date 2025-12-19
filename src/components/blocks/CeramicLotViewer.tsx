@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, BrickWall, Calendar, Package } from 'lucide-react';
+import { Loader2, BrickWall, Calendar, Package, MapPin } from 'lucide-react';
 import useCeramicLots from '@/hooks/use-ceramic-lots';
 import { format } from 'date-fns';
 
@@ -34,6 +34,7 @@ const CeramicLotViewer: React.FC<CeramicLotViewerProps> = ({ blockId, blockName 
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[120px]">Local</TableHead>
                 <TableHead>Nº Lote</TableHead>
                 <TableHead>Produto</TableHead>
                 <TableHead>Fabricante</TableHead>
@@ -44,6 +45,12 @@ const CeramicLotViewer: React.FC<CeramicLotViewerProps> = ({ blockId, blockName 
               {lots && lots.length > 0 ? (
                 lots.map((lot) => (
                   <TableRow key={lot.id}>
+                    <TableCell>
+                      <div className="flex items-center text-sm font-medium">
+                        <MapPin className="w-3 h-3 mr-1 text-muted-foreground" />
+                        {lot.location}
+                      </div>
+                    </TableCell>
                     <TableCell className="font-medium flex items-center">
                       <Package className="w-4 h-4 mr-2 text-muted-foreground" />
                       {lot.lot_number}
@@ -59,7 +66,7 @@ const CeramicLotViewer: React.FC<CeramicLotViewerProps> = ({ blockId, blockName 
                   </TableRow>
                 ))
               ) : (
-                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum lote de cerâmica cadastrado para este bloco.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Nenhum lote de cerâmica cadastrado para este bloco.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
