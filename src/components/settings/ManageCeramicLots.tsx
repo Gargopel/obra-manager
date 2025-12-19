@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import useConfigData from '@/hooks/use-config-data';
 import { format } from 'date-fns';
-import { Label } from '@/components/ui/label'; // Importação adicionada
+import { Label } from '@/components/ui/label';
 
 interface CeramicLot {
   id: string;
@@ -46,6 +46,13 @@ const ManageCeramicLots: React.FC = () => {
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingLot, setEditingLot] = useState<Partial<CeramicLot>>({});
+
+  // Inicializa selectedBlockId com o primeiro bloco assim que os dados de configuração carregarem
+  useEffect(() => {
+    if (configData?.blocks && configData.blocks.length > 0 && !selectedBlockId) {
+      setSelectedBlockId(configData.blocks[0].id);
+    }
+  }, [configData, selectedBlockId]);
 
   const { data: lots, isLoading, error } = useQuery<CeramicLot[], Error>({
     queryKey: ['ceramicLots', selectedBlockId],
@@ -139,6 +146,8 @@ const ManageCeramicLots: React.FC = () => {
     setEditingLot(prev => ({ ...prev, [key]: value }));
   };
 
+  const selectedBlockName = configData?.blocks.find(b => b.id === selectedBlockId)?.name;
+
   return (
     <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50">
       <CardHeader>
@@ -150,7 +159,7 @@ const ManageCeramicLots: React.FC = () => {
         <div className="mb-6 space-y-2">
           <Label htmlFor="block-select">Selecione o Bloco</Label>
           <Select 
-            value={selectedBlockId} 
+            value={selectedBlockId || ''} 
             onValueChange={setSelectedBlockId}
             disabled={isLoadingConfig}
           >
@@ -169,7 +178,7 @@ const ManageCeramicLots: React.FC = () => {
           <>
             {/* Formulário de Criação */}
             <div className="mb-8 p-4 border rounded-lg bg-accent/50">
-              <h3 className="text-lg font-semibold mb-3">Adicionar Novo Lote ao Bloco {configData?.blocks.find(b => b.id === selectedBlockId)?.name}</h3>
+              <h3 className="text-lg font-semibold mb-3">Adicionar Novo Lote ao Bloco {selectedBlockName}</h3>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Input 
                   placeholder="Nº do Lote (Obrigatório)" 
@@ -313,7 +322,13 @@ const ManageCeramicLots: React.FC = () => {
             </div>
           </>
         )}
-        {!selectedBlockId && (
+        {!selectedBlockId && !isLoadingConfig && configData?.blocks.length === 0 && (
+          <p className="text-center text-red-500 mt-4">Nenhum bloco cadastrado. Cadastre blocos na aba 'Blocos' primeiro.</p>
+        )}
+        {!selectedBlockId && (isLoading || isLoadingConfig) && (
+          <p className="text-center text-muted-foreground mt-4">Carregando dados de configuração...</p>
+        )}
+        {!selectedBlockId && !isLoadingConfig && configData?.blocks.length > 0 && (
           <p className="text-center text-muted-foreground mt-4">Selecione um bloco acima para gerenciar os lotes de cerâmica.</p>
         )}
       </CardContent>
