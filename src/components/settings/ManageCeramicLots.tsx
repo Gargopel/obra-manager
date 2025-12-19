@@ -10,6 +10,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import useConfigData from '@/hooks/use-config-data';
 import { format } from 'date-fns';
+import { Label } from '@/components/ui/label'; // Importação adicionada
 
 interface CeramicLot {
   id: string;
