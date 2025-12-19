@@ -21,3 +21,9 @@ export const DEMAND_STATUSES = ['Pendente', 'Resolvido'];
 
 // Locais de aplicação da cerâmica
 export const CERAMIC_LOCATIONS = ['Apartamentos', 'Circulação', 'Sacada'];
+
+// Locais de aplicação da pintura
+export const PAINTING_LOCATIONS = ['Apartamento', 'Sacada', 'Banheiro', 'Circulação'];
+
+// Status de rastreamento de pintura
+export const PAINTING_STATUSES = ['Em Andamento', 'Finalizado', 'Entregue'];
