@@ -8,7 +8,7 @@ export const APARTMENTS_PER_BLOCK = 20;
 export const generateApartmentNumbers = (): string[] => {
   const apartmentNumbers: string[] = [];
   for (let floor = 1; floor <= 5; floor++) {
-    for (for (let unit = 1; unit <= 4; unit++) {
+    for (let unit = 1; unit <= 4; unit++) {
       apartmentNumbers.push(`${floor}0${unit}`);
     }
   }
