@@ -42,3 +42,9 @@ export const OPENING_TYPES_FIRST_FLOOR = ['Poço'];
 
 // Tipos de aberturas especiais para o 1º andar (entrada do bloco)
 export const OPENING_TYPES_ENTRANCE = ['Entrada do Bloco'];
+
+// Tipos de portas
+export const DOOR_LOCATIONS = ['Entrada', 'Q1', 'Q2', 'Banheiro'];
+
+// Status de rastreamento de portas
+export const DOOR_STATUSES = ['Falta', 'Instalada', 'Corrigir', 'Entregue', 'Falta Arremate'];

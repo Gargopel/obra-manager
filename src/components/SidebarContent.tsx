@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ListChecks, Settings, LogOut, LayoutDashboard, User, BrickWall, PaintBucket, DoorOpen } from 'lucide-react';
+import { ListChecks, Settings, LogOut, LayoutDashboard, User, BrickWall, PaintBucket, DoorOpen, DoorClosed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,7 +27,8 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
     { name: 'Demandas', icon: ListChecks, path: '/demands' },
     { name: 'Cerâmicas', icon: BrickWall, path: '/ceramics' },
     { name: 'Pinturas', icon: PaintBucket, path: '/paintings' },
-    { name: 'Aberturas', icon: DoorOpen, path: '/openings' }, // Novo item de navegação
+    { name: 'Aberturas', icon: DoorOpen, path: '/openings' },
+    { name: 'Portas', icon: DoorClosed, path: '/doors' }, // Novo item de navegação
   ];
 
   if (isAdmin) {

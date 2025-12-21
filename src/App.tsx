@@ -13,7 +13,8 @@ import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import CeramicsPage from "./pages/CeramicsPage";
 import PaintingsPage from "./pages/PaintingsPage";
-import OpeningsPage from "./pages/OpeningsPage"; // Importando a nova página
+import OpeningsPage from "./pages/OpeningsPage";
+import DoorsPage from "./pages/DoorsPage"; // Importando a nova página
 
 const queryClient = new QueryClient();
 
@@ -32,7 +33,8 @@ const App = () => (
               <Route path="/demands" element={<DemandsPage />} />
               <Route path="/ceramics" element={<CeramicsPage />} />
               <Route path="/paintings" element={<PaintingsPage />} />
-              <Route path="/openings" element={<OpeningsPage />} /> {/* Nova Rota */}
+              <Route path="/openings" element={<OpeningsPage />} />
+              <Route path="/doors" element={<DoorsPage />} /> {/* Nova Rota */}
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

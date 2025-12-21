@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Settings, Users, Wrench, Home, Lock, User, Building, Globe, BrickWall, PaintBucket, DoorOpen } from 'lucide-react';
+import { Settings, Users, Wrench, Home, Lock, User, Building, Globe, BrickWall, PaintBucket, DoorOpen, DoorClosed } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,7 +11,8 @@ import ManageBlocks from '@/components/settings/ManageBlocks';
 import ManageSiteConfig from '@/components/settings/ManageSiteConfig';
 import ManageCeramicLots from '@/components/settings/ManageCeramicLots';
 import ManagePainters from '@/components/settings/ManagePainters';
-import ManageOpeningTypes from '@/components/settings/ManageOpeningTypes'; // Importando o novo componente
+import ManageOpeningTypes from '@/components/settings/ManageOpeningTypes';
+import ManageDoorTypes from '@/components/settings/ManageDoorTypes'; // Importando o novo componente
 
 const SettingsPage: React.FC = () => {
   const { isAdmin, isLoading } = useSession();
@@ -43,7 +44,7 @@ const SettingsPage: React.FC = () => {
       </h1>
       
       <Tabs defaultValue={initialTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-9 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-10 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
           <TabsTrigger value="profile" className="flex items-center"><User className="w-4 h-4 mr-2" /> Perfil</TabsTrigger>
           <TabsTrigger value="users" className="flex items-center"><Users className="w-4 h-4 mr-2" /> Usuários</TabsTrigger>
           <TabsTrigger value="blocks" className="flex items-center"><Building className="w-4 h-4 mr-2" /> Blocos</TabsTrigger>
@@ -51,7 +52,8 @@ const SettingsPage: React.FC = () => {
           <TabsTrigger value="rooms" className="flex items-center"><Home className="w-4 h-4 mr-2" /> Cômodos</TabsTrigger>
           <TabsTrigger value="painters" className="flex items-center"><PaintBucket className="w-4 h-4 mr-2" /> Pintores</TabsTrigger>
           <TabsTrigger value="ceramic-lots" className="flex items-center"><BrickWall className="w-4 h-4 mr-2" /> Lotes Cerâmica</TabsTrigger>
-          <TabsTrigger value="opening-types" className="flex items-center"><DoorOpen className="w-4 h-4 mr-2" /> Tipos Aberturas</TabsTrigger> {/* Nova Aba */}
+          <TabsTrigger value="opening-types" className="flex items-center"><DoorOpen className="w-4 h-4 mr-2" /> Tipos Aberturas</TabsTrigger>
+          <TabsTrigger value="door-types" className="flex items-center"><DoorClosed className="w-4 h-4 mr-2" /> Tipos Portas</TabsTrigger> {/* Nova Aba */}
           <TabsTrigger value="site" className="flex items-center"><Globe className="w-4 h-4 mr-2" /> Site</TabsTrigger>
         </TabsList>
         
@@ -93,6 +95,10 @@ const SettingsPage: React.FC = () => {
         
         <TabsContent value="opening-types" className="mt-6">
           <ManageOpeningTypes />
+        </TabsContent>
+        
+        <TabsContent value="door-types" className="mt-6">
+          <ManageDoorTypes />
         </TabsContent>
         
         <TabsContent value="site" className="mt-6">

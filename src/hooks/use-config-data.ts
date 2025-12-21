@@ -12,18 +12,20 @@ interface ConfigData {
   blocks: ConfigItem[];
   painters: ConfigItem[]; // Adicionando pintores
   openingTypes: ConfigItem[]; // Adicionando tipos de aberturas
+  doorTypes: ConfigItem[]; // Adicionando tipos de portas
 }
 
 const useConfigData = () => {
   return useQuery<ConfigData, Error>({
     queryKey: ['configData'],
     queryFn: async () => {
-      const [serviceTypesResult, roomsResult, blocksResult, paintersResult, openingTypesResult] = await Promise.all([
+      const [serviceTypesResult, roomsResult, blocksResult, paintersResult, openingTypesResult, doorTypesResult] = await Promise.all([
         supabase.from('service_types').select('id, name').order('name'),
         supabase.from('rooms').select('id, name').order('name'),
         supabase.from('blocks').select('id, name').order('name'),
         supabase.from('painters').select('id, name').order('name'), // Buscando pintores
         supabase.from('opening_types').select('id, name').order('name'), // Buscando tipos de aberturas
+        supabase.from('door_types').select('id, name').order('name'), // Buscando tipos de portas
       ]);
 
       if (serviceTypesResult.error) throw new Error(serviceTypesResult.error.message);
@@ -31,6 +33,7 @@ const useConfigData = () => {
       if (blocksResult.error) throw new Error(blocksResult.error.message);
       if (paintersResult.error) throw new Error(paintersResult.error.message);
       if (openingTypesResult.error) throw new Error(openingTypesResult.error.message);
+      if (doorTypesResult.error) throw new Error(doorTypesResult.error.message);
 
       return {
         serviceTypes: serviceTypesResult.data as ConfigItem[],
@@ -38,6 +41,7 @@ const useConfigData = () => {
         blocks: blocksResult.data as ConfigItem[],
         painters: paintersResult.data as ConfigItem[], // Retornando pintores
         openingTypes: openingTypesResult.data as ConfigItem[], // Retornando tipos de aberturas
+        doorTypes: doorTypesResult.data as ConfigItem[], // Retornando tipos de portas
       };
     },
   });
