@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { BLOCKS, APARTMENT_NUMBERS, PAINTING_LOCATIONS } from '@/utils/construction-structure';
+import { BLOCKS, APARTMENT_NUMBERS, PAINTING_LOCATIONS, PAINTING_COATS } from '@/utils/construction-structure';
 import useConfigData from '@/hooks/use-config-data';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +25,7 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
   const [apartmentNumber, setApartmentNumber] = useState<string | undefined>(undefined);
   const [painterId, setPainterId] = useState('');
   const [location, setLocation] = useState<string>(PAINTING_LOCATIONS[0]);
+  const [coat, setCoat] = useState<string>(PAINTING_COATS[0]); // Novo estado para demão
   
   const isApartmentRequired = location !== 'Circulação';
   
@@ -40,12 +41,13 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
     setApartmentNumber(undefined);
     setPainterId('');
     setLocation(PAINTING_LOCATIONS[0]);
+    setCoat(PAINTING_COATS[0]); // Resetar demão
   };
   
   const createPaintingMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Usuário não autenticado.');
-      if (!blockId || !painterId || (isApartmentRequired && !apartmentNumber)) {
+      if (!blockId || !painterId || (isApartmentRequired && !apartmentNumber) || !coat) {
         throw new Error('Preencha todos os campos obrigatórios.');
       }
       
@@ -58,6 +60,7 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
           painter_id: painterId,
           location: location,
           status: 'Em Andamento', // Default status
+          coat: coat, // Incluindo demão
         });
         
       if (insertError) throw new Error('Erro ao registrar pintura: ' + insertError.message);
@@ -78,7 +81,7 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
     createPaintingMutation.mutate();
   };
   
-  const isFormValid = blockId && painterId && (!isApartmentRequired || apartmentNumber);
+  const isFormValid = blockId && painterId && coat && (!isApartmentRequired || apartmentNumber);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -138,19 +141,35 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
             </div>
           </div>
           
-          {/* Pintor */}
-          <div className="space-y-2">
-            <Label htmlFor="painter">Pintor Responsável</Label>
-            <Select value={painterId} onValueChange={setPainterId} disabled={isLoadingConfig}>
-              <SelectTrigger id="painter">
-                <SelectValue placeholder="Selecione o Pintor" />
-              </SelectTrigger>
-              <SelectContent>
-                {configData?.painters.map(painter => (
-                  <SelectItem key={painter.id} value={painter.id}>{painter.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Pintor e Demão */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="painter">Pintor Responsável</Label>
+              <Select value={painterId} onValueChange={setPainterId} disabled={isLoadingConfig}>
+                <SelectTrigger id="painter">
+                  <SelectValue placeholder="Selecione o Pintor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {configData?.painters.map(painter => (
+                    <SelectItem key={painter.id} value={painter.id}>{painter.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="coat">Demão</Label>
+              <Select value={coat} onValueChange={setCoat}>
+                <SelectTrigger id="coat">
+                  <SelectValue placeholder="Selecione a Demão" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAINTING_COATS.map(c => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           
           <DialogFooter>

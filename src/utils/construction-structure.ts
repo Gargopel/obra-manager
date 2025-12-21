@@ -27,3 +27,6 @@ export const PAINTING_LOCATIONS = ['Apartamento', 'Sacada', 'Banheiro', 'Circula
 
 // Status de rastreamento de pintura
 export const PAINTING_STATUSES = ['Em Andamento', 'Finalizado', 'Entregue'];
+
+// Demãos de pintura
+export const PAINTING_COATS = ['Primeira Demão', 'Segunda Demão'];

@@ -6,7 +6,7 @@ interface Filters {
   apartment_number?: string;
   location?: string;
   status?: string;
-  painter_id?: string; // We will filter by painter name if needed, but keeping ID structure for consistency
+  painter_id?: string;
 }
 
 export interface PaintingDetail {
@@ -14,8 +14,10 @@ export interface PaintingDetail {
   user_id: string | null;
   block_id: string;
   apartment_number: string | null;
+  painter_id: string;
   location: 'Apartamento' | 'Sacada' | 'Banheiro' | 'Circulação';
   status: 'Em Andamento' | 'Finalizado' | 'Entregue';
+  coat: 'Primeira Demão' | 'Segunda Demão'; // Novo campo
   created_at: string;
   last_updated_at: string;
   painter_name: string;
@@ -42,9 +44,9 @@ const usePaintings = (filters: Filters) => {
       if (filters.status) {
         query = query.eq('status', filters.status);
       }
-      // Note: Filtering by painter_id is complex since the view only exposes painter_name.
-      // For now, we rely on filtering by other fields. If filtering by painter is critical,
-      // we might need a separate query or update the view/hook logic.
+      if (filters.painter_id) {
+        query = query.eq('painter_id', filters.painter_id);
+      }
 
       const { data, error } = await query;
 
