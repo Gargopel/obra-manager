@@ -30,3 +30,15 @@ export const PAINTING_STATUSES = ['Em Andamento', 'Finalizado', 'Entregue'];
 
 // Demãos de pintura
 export const PAINTING_COATS = ['Primeira Demão', 'Segunda Demão'];
+
+// Tipos de aberturas para apartamentos
+export const OPENING_TYPES_APARTMENT = ['Q1', 'Q2', 'Banheiro', 'Cozinha'];
+
+// Tipos de aberturas para circulação (andares)
+export const OPENING_TYPES_CIRCULATION = ['Circulação'];
+
+// Tipos de aberturas especiais para apartamentos do 1º andar
+export const OPENING_TYPES_FIRST_FLOOR = ['Poço'];
+
+// Tipos de aberturas especiais para o 1º andar (entrada do bloco)
+export const OPENING_TYPES_ENTRANCE = ['Entrada do Bloco'];
