@@ -20,6 +20,59 @@ interface CreateDemandDialogProps {
 }
 
 const MAX_DESCRIPTION_LENGTH = 400;
+const MAX_IMAGE_SIZE_MB = 5;
+const MAX_IMAGE_WIDTH = 1200; // Max width for compression
+
+/**
+ * Compresses and resizes an image file using the browser's canvas API.
+ * @param file The original image file.
+ * @returns A new File object (Blob) with reduced size/dimensions.
+ */
+const compressImage = (file: File): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = img.width;
+        let height = img.height;
+        
+        // Resize if width exceeds MAX_IMAGE_WIDTH
+        if (width > MAX_IMAGE_WIDTH) {
+          height *= MAX_IMAGE_WIDTH / width;
+          width = MAX_IMAGE_WIDTH;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Convert canvas content to Blob (compressed JPEG at 80% quality)
+        canvas.toBlob((blob) => {
+          if (blob) {
+            // Create a new File object from the compressed Blob
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          } else {
+            reject(new Error('Falha na compactação da imagem.'));
+          }
+        }, 'image/jpeg', 0.8); // 0.8 is the quality setting (80%)
+      };
+      img.onerror = (error) => reject(error);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 
 const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenChange }) => {
   const { data: configData, isLoading: isLoadingConfig } = useConfigData();
@@ -54,8 +107,11 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
       let imageUrl: string | null = null;
       
       if (imageFile) {
-        // Upload para Supabase Storage
-        imageUrl = await uploadFile(imageFile, 'demands');
+        // 1. Compactar a imagem antes do upload
+        const compressedFile = await compressImage(imageFile);
+        
+        // 2. Upload para Supabase Storage
+        imageUrl = await uploadFile(compressedFile, 'demands');
       }
       
       const { error: insertError } = await supabase
@@ -93,9 +149,10 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      
       // Verificar tamanho do arquivo (máximo 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        showError('A imagem deve ter no máximo 5MB.');
+      if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+        showError(`A imagem deve ter no máximo ${MAX_IMAGE_SIZE_MB}MB.`);
         return;
       }
       
@@ -222,7 +279,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
               </div>
             )}
             <p className="text-xs text-muted-foreground">
-              Tamanho máximo: 5MB
+              Tamanho máximo: {MAX_IMAGE_SIZE_MB}MB. A imagem será compactada para {MAX_IMAGE_WIDTH}px de largura antes do upload.
             </p>
           </div>
           

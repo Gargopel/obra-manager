@@ -11,6 +11,61 @@ import { Loader2, User, Briefcase, Camera } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { uploadFile, deleteFile } from '@/integrations/supabase/storage'; // Importando utilitário de storage
 
+const MAX_AVATAR_SIZE_MB = 2;
+const MAX_AVATAR_DIMENSION = 400; // Max dimension for compression
+
+/**
+ * Compresses and resizes an image file using the browser's canvas API.
+ * @param file The original image file.
+ * @returns A new File object (Blob) with reduced size/dimensions.
+ */
+const compressImage = (file: File): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = img.width;
+        let height = img.height;
+        
+        // Resize if either dimension exceeds MAX_AVATAR_DIMENSION
+        if (width > MAX_AVATAR_DIMENSION || height > MAX_AVATAR_DIMENSION) {
+          const ratio = Math.min(MAX_AVATAR_DIMENSION / width, MAX_AVATAR_DIMENSION / height);
+          width *= ratio;
+          height *= ratio;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Convert canvas content to Blob (compressed JPEG at 80% quality)
+        canvas.toBlob((blob) => {
+          if (blob) {
+            // Create a new File object from the compressed Blob
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          } else {
+            reject(new Error('Falha na compactação da imagem.'));
+          }
+        }, 'image/jpeg', 0.8); // 0.8 is the quality setting (80%)
+      };
+      img.onerror = (error) => reject(error);
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
+
+
 const UserProfile: React.FC = () => {
   const { profile, user } = useSession();
   const queryClient = useQueryClient();
@@ -41,8 +96,9 @@ const UserProfile: React.FC = () => {
           await deleteFile(profile.avatar_url);
         }
         
-        // 2. Faz o upload do novo avatar
-        avatarUrl = await uploadFile(avatarFile, 'avatars');
+        // 2. Compacta e faz o upload do novo avatar
+        const compressedFile = await compressImage(avatarFile);
+        avatarUrl = await uploadFile(compressedFile, 'avatars');
       }
       
       const { error: updateError } = await supabase
@@ -76,8 +132,8 @@ const UserProfile: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       // Verificar tamanho do arquivo (máximo 2MB)
-      if (file.size > 2 * 1024 * 1024) {
-        showError('A imagem deve ter no máximo 2MB.');
+      if (file.size > MAX_AVATAR_SIZE_MB * 1024 * 1024) {
+        showError(`A imagem deve ter no máximo ${MAX_AVATAR_SIZE_MB}MB.`);
         return;
       }
       
@@ -136,7 +192,7 @@ const UserProfile: React.FC = () => {
                 </p>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                Tamanho máximo: 2MB
+                Tamanho máximo: {MAX_AVATAR_SIZE_MB}MB. Será compactada para {MAX_AVATAR_DIMENSION}x{MAX_AVATAR_DIMENSION}px.
               </p>
             </div>
           </div>
