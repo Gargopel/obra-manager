@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { Loader2 } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
-import { uploadFile } from '@/integrations/supabase/storage'; // Importando utilitário de storage
+import { uploadFile, deleteFile } from '@/integrations/supabase/storage'; // Importando utilitário de storage
 
 interface CreateDemandDialogProps {
   open: boolean;
@@ -100,8 +100,9 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
   const createDemandMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Usuário não autenticado.');
-      if (!blockId || !apartmentNumber || !serviceTypeId || !roomId || !description) {
-        throw new Error('Preencha todos os campos obrigatórios.');
+      // A descrição agora é opcional, mas os outros campos continuam obrigatórios
+      if (!blockId || !apartmentNumber || !serviceTypeId || !roomId) {
+        throw new Error('Preencha todos os campos obrigatórios (Bloco, Apartamento, Tipo de Serviço, Cômodo).');
       }
       
       let imageUrl: string | null = null;
@@ -122,7 +123,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
           apartment_number: apartmentNumber,
           service_type_id: serviceTypeId,
           room_id: roomId,
-          description: description,
+          description: description || null, // Envia null se estiver vazio
           image_url: imageUrl,
           status: 'Pendente',
         });
@@ -168,6 +169,9 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
     }
   };
   
+  // A descrição agora é opcional, então a validação do formulário só precisa dos outros campos
+  const isFormValid = blockId && apartmentNumber && serviceTypeId && roomId;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/70 dark:bg-gray-800/70 shadow-2xl border border-white/30 dark:border-gray-700/50">
@@ -178,7 +182,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
           {/* Localização */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="block">Bloco</Label>
+              <Label htmlFor="block">Bloco *</Label>
               <Select value={blockId} onValueChange={setBlockId}>
                 <SelectTrigger id="block">
                   <SelectValue placeholder="Selecione o Bloco" />
@@ -191,7 +195,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="apartment">Apartamento</Label>
+              <Label htmlFor="apartment">Apartamento *</Label>
               <Select value={apartmentNumber} onValueChange={setApartmentNumber}>
                 <SelectTrigger id="apartment">
                   <SelectValue placeholder="Selecione o Apto" />
@@ -208,7 +212,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
           {/* Tipo e Cômodo */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="serviceType">Tipo de Serviço</Label>
+              <Label htmlFor="serviceType">Tipo de Serviço *</Label>
               <Select value={serviceTypeId} onValueChange={setServiceTypeId} disabled={isLoadingConfig}>
                 <SelectTrigger id="serviceType">
                   <SelectValue placeholder="Selecione o Tipo" />
@@ -221,7 +225,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="room">Cômodo</Label>
+              <Label htmlFor="room">Cômodo *</Label>
               <Select value={roomId} onValueChange={setRoomId} disabled={isLoadingConfig}>
                 <SelectTrigger id="room">
                   <SelectValue placeholder="Selecione o Cômodo" />
@@ -237,7 +241,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
           
           {/* Descrição */}
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição (Máx. {MAX_DESCRIPTION_LENGTH} palavras)</Label>
+            <Label htmlFor="description">Descrição (Opcional - Máx. {MAX_DESCRIPTION_LENGTH} palavras)</Label>
             <Textarea 
               id="description"
               value={description} 
@@ -257,7 +261,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
           
           {/* Upload de Imagem */}
           <div className="space-y-2">
-            <Label htmlFor="image">Upload de Imagem/Foto</Label>
+            <Label htmlFor="image">Upload de Imagem/Foto (Opcional)</Label>
             <Input 
               id="image"
               type="file" 
@@ -286,7 +290,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
           <DialogFooter>
             <Button 
               type="submit" 
-              disabled={createDemandMutation.isPending}
+              disabled={createDemandMutation.isPending || !isFormValid}
             >
               {createDemandMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
