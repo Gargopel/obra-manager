@@ -4,11 +4,19 @@ import { Button } from '@/components/ui/button';
 import DemandsFilterPanel from '@/components/demands/DemandsFilterPanel';
 import DemandsList from '@/components/demands/DemandsList';
 import CreateDemandDialog from '@/components/demands/CreateDemandDialog';
+import useSiteConfig from '@/hooks/use-site-config';
 
 const DemandsPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [filters, setFilters] = useState({});
+  const { data: siteConfig } = useSiteConfig();
+  
+  React.useEffect(() => {
+    if (siteConfig?.site_name) {
+      document.title = siteConfig.site_name + ' - Demandas';
+    }
+  }, [siteConfig]);
 
   return (
     <div className="space-y-8">

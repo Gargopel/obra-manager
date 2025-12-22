@@ -5,9 +5,17 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import useConfigData from '@/hooks/use-config-data';
 import { Loader2 } from 'lucide-react';
 import CeramicLotViewer from '@/components/blocks/CeramicLotViewer';
+import useSiteConfig from '@/hooks/use-site-config';
 
 const CeramicsPage: React.FC = () => {
   const { data: configData, isLoading, error } = useConfigData();
+  const { data: siteConfig } = useSiteConfig();
+  
+  React.useEffect(() => {
+    if (siteConfig?.site_name) {
+      document.title = siteConfig.site_name + ' - Cerâmicas';
+    }
+  }, [siteConfig]);
 
   if (isLoading) {
     return <div className="flex justify-center p-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;

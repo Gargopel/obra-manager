@@ -4,11 +4,19 @@ import { Button } from '@/components/ui/button';
 import OpeningsFilterPanel from '@/components/openings/OpeningsFilterPanel';
 import OpeningsList from '@/components/openings/OpeningsList';
 import CreateOpeningDialog from '@/components/openings/CreateOpeningDialog';
+import useSiteConfig from '@/hooks/use-site-config';
 
 const OpeningsPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [filters, setFilters] = useState({});
+  const { data: siteConfig } = useSiteConfig();
+  
+  React.useEffect(() => {
+    if (siteConfig?.site_name) {
+      document.title = siteConfig.site_name + ' - Aberturas';
+    }
+  }, [siteConfig]);
 
   return (
     <div className="space-y-8">

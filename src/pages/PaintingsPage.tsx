@@ -4,11 +4,19 @@ import { Button } from '@/components/ui/button';
 import PaintingsFilterPanel from '@/components/paintings/PaintingsFilterPanel';
 import PaintingsList from '@/components/paintings/PaintingsList';
 import CreatePaintingDialog from '@/components/paintings/CreatePaintingDialog';
+import useSiteConfig from '@/hooks/use-site-config';
 
 const PaintingsPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [filters, setFilters] = useState({});
+  const { data: siteConfig } = useSiteConfig();
+  
+  React.useEffect(() => {
+    if (siteConfig?.site_name) {
+      document.title = siteConfig.site_name + ' - Pinturas';
+    }
+  }, [siteConfig]);
 
   return (
     <div className="space-y-8">

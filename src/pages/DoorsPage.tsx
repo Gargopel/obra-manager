@@ -4,11 +4,19 @@ import { Button } from '@/components/ui/button';
 import DoorsFilterPanel from '@/components/doors/DoorsFilterPanel';
 import DoorsList from '@/components/doors/DoorsList';
 import CreateDoorDialog from '@/components/doors/CreateDoorDialog';
+import useSiteConfig from '@/hooks/use-site-config';
 
 const DoorsPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [filters, setFilters] = useState({});
+  const { data: siteConfig } = useSiteConfig();
+  
+  React.useEffect(() => {
+    if (siteConfig?.site_name) {
+      document.title = siteConfig.site_name + ' - Portas';
+    }
+  }, [siteConfig]);
 
   return (
     <div className="space-y-8">

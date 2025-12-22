@@ -6,6 +6,7 @@ import Sidebar from './Sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileSidebar from './MobileSidebar';
 import useSiteConfig from '@/hooks/use-site-config';
+import { Footer } from './Footer'; // Importando o Footer
 
 const Layout: React.FC = () => {
   const { session, isLoading } = useSession();
@@ -52,6 +53,9 @@ const Layout: React.FC = () => {
             <Outlet />
           </div>
         </main>
+        
+        {/* Footer */}
+        {!isMobile && <Footer />}
       </div>
     </div>
   );

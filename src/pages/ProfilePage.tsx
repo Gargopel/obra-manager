@@ -4,9 +4,17 @@ import { Navigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { User, Lock } from 'lucide-react';
 import UserProfile from '@/components/settings/UserProfile';
+import useSiteConfig from '@/hooks/use-site-config';
 
 const ProfilePage: React.FC = () => {
   const { profile, isLoading } = useSession();
+  const { data: siteConfig } = useSiteConfig();
+  
+  React.useEffect(() => {
+    if (siteConfig?.site_name) {
+      document.title = siteConfig.site_name + ' - Meu Perfil';
+    }
+  }, [siteConfig]);
   
   if (isLoading) return null;
   

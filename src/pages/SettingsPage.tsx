@@ -12,16 +12,24 @@ import ManageSiteConfig from '@/components/settings/ManageSiteConfig';
 import ManageCeramicLots from '@/components/settings/ManageCeramicLots';
 import ManagePainters from '@/components/settings/ManagePainters';
 import ManageOpeningTypes from '@/components/settings/ManageOpeningTypes';
-import ManageDoorTypes from '@/components/settings/ManageDoorTypes'; // Importando o novo componente
+import ManageDoorTypes from '@/components/settings/ManageDoorTypes';
+import useSiteConfig from '@/hooks/use-site-config';
 
 const SettingsPage: React.FC = () => {
   const { isAdmin, isLoading } = useSession();
+  const { data: siteConfig } = useSiteConfig();
   const location = useLocation();
   const navigate = useNavigate();
   
   // Extrair parâmetro 'tab' da URL
   const urlParams = new URLSearchParams(location.search);
   const initialTab = urlParams.get('tab') || 'profile';
+  
+  React.useEffect(() => {
+    if (siteConfig?.site_name) {
+      document.title = siteConfig.site_name + ' - Configurações';
+    }
+  }, [siteConfig]);
   
   if (isLoading) return null; // Wait for session loading
   
@@ -53,7 +61,7 @@ const SettingsPage: React.FC = () => {
           <TabsTrigger value="painters" className="flex items-center"><PaintBucket className="w-4 h-4 mr-2" /> Pintores</TabsTrigger>
           <TabsTrigger value="ceramic-lots" className="flex items-center"><BrickWall className="w-4 h-4 mr-2" /> Lotes Cerâmica</TabsTrigger>
           <TabsTrigger value="opening-types" className="flex items-center"><DoorOpen className="w-4 h-4 mr-2" /> Tipos Aberturas</TabsTrigger>
-          <TabsTrigger value="door-types" className="flex items-center"><DoorClosed className="w-4 h-4 mr-2" /> Tipos Portas</TabsTrigger> {/* Nova Aba */}
+          <TabsTrigger value="door-types" className="flex items-center"><DoorClosed className="w-4 h-4 mr-2" /> Tipos Portas</TabsTrigger>
           <TabsTrigger value="site" className="flex items-center"><Globe className="w-4 h-4 mr-2" /> Site</TabsTrigger>
         </TabsList>
         

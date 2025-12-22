@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useAdminBootstrap } from '@/hooks/use-admin-bootstrap';
 import useSiteConfig from '@/hooks/use-site-config';
+import React from 'react';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -15,6 +16,12 @@ const Login = () => {
   
   // Hook de bootstrap: tenta promover o usuário se for admin@teste.com
   useAdminBootstrap(user?.email);
+  
+  React.useEffect(() => {
+    if (siteConfig?.site_name) {
+      document.title = siteConfig.site_name + ' - Login';
+    }
+  }, [siteConfig]);
 
   // Redireciona se já estiver logado
   if (!isLoading && session) {

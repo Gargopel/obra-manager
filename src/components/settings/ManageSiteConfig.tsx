@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
-import { Loader2, Globe, Image, X } from 'lucide-react';
+import { Loader2, Globe, Image, X, Footprints } from 'lucide-react';
 import useSiteConfig, { SiteConfig } from '@/hooks/use-site-config';
 import { uploadFile, deleteFile } from '@/integrations/supabase/storage'; // Importando utilitário de storage
 
@@ -31,6 +31,7 @@ const ManageSiteConfig: React.FC = () => {
   const queryClient = useQueryClient();
   
   const [siteName, setSiteName] = useState('');
+  const [footerText, setFooterText] = useState(''); // Novo estado para o rodapé
   
   // Estados para Main Background
   const [mainBgFile, setMainBgFile] = useState<File | null>(null);
@@ -43,6 +44,12 @@ const ManageSiteConfig: React.FC = () => {
   useEffect(() => {
     if (config) {
       setSiteName(config.site_name);
+      // Assumindo que o campo 'footer_text' será adicionado ao schema do Supabase
+      // Por enquanto, usaremos um valor padrão se não existir no objeto config
+      // Vamos adicionar o campo 'footer_text' ao payload de update/insert
+      // Para o estado local, vamos usar um valor padrão se não estiver presente
+      setFooterText((config as any).footer_text || 'Desenvolvido por Dyad'); 
+      
       // Se não houver um novo arquivo selecionado, use a URL do banco de dados como preview
       if (!mainBgFile) setMainBgPreview(config.main_background_url || null);
       if (!loginBgFile) setLoginBgPreview(config.login_background_url || null);
@@ -113,6 +120,7 @@ const ManageSiteConfig: React.FC = () => {
       
       const payload = {
         site_name: siteName.trim(),
+        footer_text: footerText.trim(), // Incluindo o novo campo
         main_background_url: newMainBgUrl,
         login_background_url: newLoginBgUrl,
       };
@@ -239,12 +247,26 @@ const ManageSiteConfig: React.FC = () => {
           
           {/* Nome do Site */}
           <div className="space-y-2">
-            <Label htmlFor="site-name">Nome do Site</Label>
+            <Label htmlFor="site-name">Nome do Site (Título da Página e Header)</Label>
             <Input 
               id="site-name"
               value={siteName} 
               onChange={(e) => setSiteName(e.target.value)} 
               placeholder="Ex: Obra Residencial Alpha"
+            />
+          </div>
+          
+          {/* Texto do Rodapé */}
+          <div className="space-y-2">
+            <Label htmlFor="footer-text" className="flex items-center">
+              <Footprints className="w-4 h-4 mr-2" />
+              Texto do Rodapé (Ex: Direitos Reservados)
+            </Label>
+            <Input 
+              id="footer-text"
+              value={footerText} 
+              onChange={(e) => setFooterText(e.target.value)} 
+              placeholder="Desenvolvido por Dyad"
             />
           </div>
           

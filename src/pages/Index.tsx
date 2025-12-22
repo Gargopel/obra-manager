@@ -1,4 +1,4 @@
-import { MadeWithDyad } from "@/components/made-with-dyad";
+import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutDashboard, ListChecks, CheckCircle, Clock, PaintBucket } from "lucide-react";
 import { useSession } from "@/contexts/SessionContext";
@@ -6,11 +6,20 @@ import DashboardStats from "@/components/dashboard/DashboardStats";
 import DemandsByServiceChart from "@/components/dashboard/DemandsByServiceChart";
 import DemandsByBlockChart from "@/components/dashboard/DemandsByBlockChart";
 import StatusOverviewChart from "@/components/dashboard/StatusOverviewChart";
-import PaintingsByStatusChart from "@/components/dashboard/PaintingsByStatusChart"; // Novo
-import PaintingsByLocationChart from "@/components/dashboard/PaintingsByLocationChart"; // Novo
+import PaintingsByStatusChart from "@/components/dashboard/PaintingsByStatusChart";
+import PaintingsByLocationChart from "@/components/dashboard/PaintingsByLocationChart";
+import useSiteConfig from "@/hooks/use-site-config";
+import React from "react";
 
 const Index = () => {
   const { profile } = useSession();
+  const { data: siteConfig } = useSiteConfig();
+  
+  React.useEffect(() => {
+    if (siteConfig?.site_name) {
+      document.title = siteConfig.site_name;
+    }
+  }, [siteConfig]);
   
   return (
     <div className="space-y-8">
@@ -85,7 +94,7 @@ const Index = () => {
         </Card>
       </div>
 
-      <MadeWithDyad />
+      <Footer />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface SiteConfig {
   id: string;
   site_name: string;
+  footer_text: string | null; // Novo campo
   main_background_url: string | null;
   login_background_url: string | null;
 }
@@ -15,7 +16,7 @@ const useSiteConfig = () => {
       // Buscamos a primeira linha (deve haver apenas uma)
       const { data, error } = await supabase
         .from('site_config')
-        .select('*')
+        .select('id, site_name, footer_text, main_background_url, login_background_url') // Incluindo footer_text
         .limit(1)
         .maybeSingle(); // Usamos maybeSingle para lidar com 0 ou 1 resultado
 
@@ -29,12 +30,17 @@ const useSiteConfig = () => {
         return {
           id: 'fallback_no_data', // Usar um ID diferente de 'default' para evitar confusão, mas ainda inválido para mutação
           site_name: 'Obra Manager',
+          footer_text: 'Desenvolvido por Dyad', // Default footer text
           main_background_url: null,
           login_background_url: null,
         } as SiteConfig;
       }
       
-      return data as SiteConfig;
+      // Garantir que footer_text tenha um valor padrão se for NULL no DB
+      return {
+        ...data,
+        footer_text: data.footer_text || 'Desenvolvido por Dyad',
+      } as SiteConfig;
     },
     staleTime: 1000 * 60 * 5, // Config is unlikely to change often
   });
