@@ -53,6 +53,9 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
   
   const creatorName = `${demand.user_first_name || ''} ${demand.user_last_name || ''}`.trim() || 'Desconhecido';
   
+  // Adiciona parâmetros de transformação para otimizar o carregamento da imagem
+  const optimizedImageUrl = demand.image_url ? `${demand.image_url}?width=1000&quality=80` : undefined;
+  
   return (
     <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50 transition-all duration-300 hover:shadow-2xl">
       <CardHeader className="pb-2">
@@ -97,7 +100,7 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
                     <DialogTitle>Imagem da Demanda</DialogTitle>
                   </DialogHeader>
                   <img 
-                    src={demand.image_url} 
+                    src={optimizedImageUrl} // Usando URL otimizada
                     alt={`Imagem da demanda ${demand.id}`} 
                     className="w-full h-auto object-contain rounded-lg"
                   />

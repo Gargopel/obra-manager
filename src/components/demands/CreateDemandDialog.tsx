@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { Loader2 } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
+import { uploadFile } from '@/integrations/supabase/storage'; // Importando utilitário de storage
 
 interface CreateDemandDialogProps {
   open: boolean;
@@ -53,23 +54,8 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
       let imageUrl: string | null = null;
       
       if (imageFile) {
-        // Em um ambiente real, aqui você faria uma chamada para seu backend
-        // para salvar a imagem localmente e retornar a URL
-        // Por enquanto, vamos simular isso criando uma URL base64
-        const reader = new FileReader();
-        const fileData = await new Promise<string>((resolve, reject) => {
-          reader.onload = (e) => {
-            if (e.target?.result) {
-              resolve(e.target.result as string);
-            } else {
-              reject(new Error('Falha ao ler o arquivo'));
-            }
-          };
-          reader.onerror = () => reject(new Error('Erro ao ler o arquivo'));
-          reader.readAsDataURL(imageFile);
-        });
-        
-        imageUrl = fileData;
+        // Upload para Supabase Storage
+        imageUrl = await uploadFile(imageFile, 'demands');
       }
       
       const { error: insertError } = await supabase
@@ -120,12 +106,8 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
       }
       
       setImageFile(file);
-      // Preview da imagem
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImagePreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Preview da imagem (usando URL.createObjectURL para Base64 temporário)
+      setImagePreview(URL.createObjectURL(file));
     }
   };
   

@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { Loader2, User, Briefcase, Camera } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { uploadFile, deleteFile } from '@/integrations/supabase/storage'; // Importando utilitário de storage
 
 const UserProfile: React.FC = () => {
   const { profile, user } = useSession();
@@ -20,6 +21,13 @@ const UserProfile: React.FC = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(profile?.avatar_url || null);
   
+  // Atualiza o preview se o profile mudar (ex: após um refresh)
+  React.useEffect(() => {
+    if (profile && !avatarFile) {
+      setAvatarPreview(profile.avatar_url || null);
+    }
+  }, [profile, avatarFile]);
+
   const updateProfileMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Usuário não autenticado.');
@@ -28,23 +36,13 @@ const UserProfile: React.FC = () => {
       
       // Upload da imagem se houver
       if (avatarFile) {
-        // Em um ambiente real, aqui você faria uma chamada para seu backend
-        // para salvar a imagem localmente e retornar a URL
-        // Por enquanto, vamos simular isso criando uma URL base64
-        const reader = new FileReader();
-        const fileData = await new Promise<string>((resolve, reject) => {
-          reader.onload = (e) => {
-            if (e.target?.result) {
-              resolve(e.target.result as string);
-            } else {
-              reject(new Error('Falha ao ler o arquivo'));
-            }
-          };
-          reader.onerror = () => reject(new Error('Erro ao ler o arquivo'));
-          reader.readAsDataURL(avatarFile);
-        });
+        // 1. Deleta o avatar antigo (se existir)
+        if (profile?.avatar_url) {
+          await deleteFile(profile.avatar_url);
+        }
         
-        avatarUrl = fileData;
+        // 2. Faz o upload do novo avatar
+        avatarUrl = await uploadFile(avatarFile, 'avatars');
       }
       
       const { error: updateError } = await supabase
@@ -61,11 +59,11 @@ const UserProfile: React.FC = () => {
       
       return avatarUrl;
     },
-    onSuccess: (newAvatarUrl) => {
+    onSuccess: () => {
       showSuccess('Perfil atualizado com sucesso!');
       setAvatarFile(null);
+      // Forçar revalidação do perfil e da lista de usuários
       queryClient.invalidateQueries({ queryKey: ['usersWithProfiles'] });
-      // Atualizar o contexto de sessão
       queryClient.invalidateQueries({ queryKey: ['session'] });
     },
     onError: (error: Error) => {
@@ -90,12 +88,8 @@ const UserProfile: React.FC = () => {
       }
       
       setAvatarFile(file);
-      // Preview da imagem
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Preview da imagem (usando URL.createObjectURL)
+      setAvatarPreview(URL.createObjectURL(file));
     }
   };
   

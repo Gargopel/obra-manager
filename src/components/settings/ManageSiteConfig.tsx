@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
-import { Loader2, Globe, Image, Upload, X } from 'lucide-react';
+import { Loader2, Globe, Image, X } from 'lucide-react';
 import useSiteConfig, { SiteConfig } from '@/hooks/use-site-config';
+import { uploadFile, deleteFile } from '@/integrations/supabase/storage'; // Importando utilitário de storage
 
-// Função auxiliar para ler o arquivo como Data URL
+// Função auxiliar para ler o arquivo como Data URL (apenas para preview local)
 const readFileAsDataURL = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -61,17 +62,18 @@ const ManageSiteConfig: React.FC = () => {
       }
       
       setFile(file);
-      readFileAsDataURL(file).then(setPreview).catch(() => setPreview(null));
+      // Usar URL.createObjectURL para preview local
+      setPreview(URL.createObjectURL(file));
     }
   };
   
-  const handleClearFile = (setFile: React.Dispatch<React.SetStateAction<File | null>>, setPreview: React.Dispatch<React.SetStateAction<string | null>>, isMain: boolean) => {
+  const handleClearFile = async (setFile: React.Dispatch<React.SetStateAction<File | null>>, setPreview: React.Dispatch<React.SetStateAction<string | null>>, currentUrl: string | null, folder: string) => {
     setFile(null);
-    // Se limpar, volta para a URL do banco de dados, ou null se não houver
-    if (isMain) {
-      setMainBgPreview(config?.main_background_url || null);
-    } else {
-      setLoginBgPreview(config?.login_background_url || null);
+    setPreview(null);
+    
+    // Se houver uma URL antiga, deletamos o arquivo do storage
+    if (currentUrl) {
+      await deleteFile(currentUrl);
     }
   };
 
@@ -84,22 +86,28 @@ const ManageSiteConfig: React.FC = () => {
         throw new Error('Configuração inválida ou não carregada. Verifique se a tabela site_config foi inicializada corretamente.');
       }
       
-      let newMainBgUrl = isCreating ? null : config.main_background_url;
-      let newLoginBgUrl = isCreating ? null : config.login_background_url;
+      let newMainBgUrl = config.main_background_url;
+      let newLoginBgUrl = config.login_background_url;
       
-      // Processar upload da imagem principal
+      // Processar Main Background
       if (mainBgFile) {
-        newMainBgUrl = await readFileAsDataURL(mainBgFile);
-      } else if (mainBgPreview === null && !isCreating && config.main_background_url) {
-        // Se o preview foi limpo e estamos atualizando um registro existente
+        // Se houver um arquivo novo, faz upload e atualiza a URL
+        if (config.main_background_url) await deleteFile(config.main_background_url);
+        newMainBgUrl = await uploadFile(mainBgFile, 'site-config');
+      } else if (mainBgPreview === null && config.main_background_url) {
+        // Se o usuário limpou o campo, deleta o arquivo e zera a URL
+        await deleteFile(config.main_background_url);
         newMainBgUrl = null;
       }
       
-      // Processar upload da imagem de login
+      // Processar Login Background
       if (loginBgFile) {
-        newLoginBgUrl = await readFileAsDataURL(loginBgFile);
-      } else if (loginBgPreview === null && !isCreating && config.login_background_url) {
-        // Se o preview foi limpo e estamos atualizando um registro existente
+        // Se houver um arquivo novo, faz upload e atualiza a URL
+        if (config.login_background_url) await deleteFile(config.login_background_url);
+        newLoginBgUrl = await uploadFile(loginBgFile, 'site-config');
+      } else if (loginBgPreview === null && config.login_background_url) {
+        // Se o usuário limpou o campo, deleta o arquivo e zera a URL
+        await deleteFile(config.login_background_url);
         newLoginBgUrl = null;
       }
       
@@ -162,14 +170,15 @@ const ManageSiteConfig: React.FC = () => {
   }
   
   // Componente auxiliar para o campo de upload de imagem
-  const ImageUploadField = ({ id, label, file, preview, setFile, setPreview, isMain }: {
+  const ImageUploadField = ({ id, label, file, preview, setFile, setPreview, currentUrl, folder }: {
     id: string;
     label: string;
     file: File | null;
     preview: string | null;
     setFile: React.Dispatch<React.SetStateAction<File | null>>;
     setPreview: React.Dispatch<React.SetStateAction<string | null>>;
-    isMain: boolean;
+    currentUrl: string | null;
+    folder: string;
   }) => (
     <div className="space-y-2">
       <Label htmlFor={id} className="flex items-center">
@@ -189,7 +198,7 @@ const ManageSiteConfig: React.FC = () => {
             variant="outline" 
             size="icon" 
             type="button"
-            onClick={() => handleClearFile(setFile, setPreview, isMain)}
+            onClick={() => handleClearFile(setFile, setPreview, currentUrl, folder)}
           >
             <X className="w-4 h-4 text-destructive" />
           </Button>
@@ -200,7 +209,8 @@ const ManageSiteConfig: React.FC = () => {
         <div className="mt-2 flex items-center space-x-4">
           {preview && (
             <img 
-              src={preview} 
+              // Adicionando parâmetros de transformação para otimização (ex: redimensionar para 200px de largura)
+              src={preview.startsWith('http') ? `${preview}?width=200&height=200&quality=70` : preview} 
               alt="Preview" 
               className="w-24 h-24 object-cover rounded-md border"
             />
@@ -246,7 +256,8 @@ const ManageSiteConfig: React.FC = () => {
             preview={mainBgPreview}
             setFile={setMainBgFile}
             setPreview={setMainBgPreview}
-            isMain={true}
+            currentUrl={config.main_background_url}
+            folder="site-config"
           />
           
           {/* Imagem de Fundo Login */}
@@ -257,7 +268,8 @@ const ManageSiteConfig: React.FC = () => {
             preview={loginBgPreview}
             setFile={setLoginBgFile}
             setPreview={setLoginBgPreview}
-            isMain={false}
+            currentUrl={config.login_background_url}
+            folder="site-config"
           />
           
           <div className="flex justify-end">
