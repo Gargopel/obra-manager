@@ -217,7 +217,7 @@ const ManageSiteConfig: React.FC = () => {
         <div className="mt-2 flex items-center space-x-4">
           {preview && (
             <img 
-              // Adicionando parâmetros de transformação para otimização (ex: redimensionar para 200px de largura)
+              // Adicionando parâmetros de transformação para otimização (redimensionar para 200px de largura e qualidade 70)
               src={preview.startsWith('http') ? `${preview}?width=200&height=200&quality=70` : preview} 
               alt="Preview" 
               className="w-24 h-24 object-cover rounded-md border"

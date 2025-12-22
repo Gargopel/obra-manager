@@ -12,7 +12,7 @@ import React from 'react';
 const Login = () => {
   const navigate = useNavigate();
   const { session, isLoading, user } = useSession();
-  const { data: siteConfig } = useSiteConfig();
+  const { data: siteConfig, isLoading: isLoadingConfig } = useSiteConfig(); // Capturando isLoadingConfig
   
   // Hook de bootstrap: tenta promover o usuário se for admin@teste.com
   useAdminBootstrap(user?.email);
@@ -29,7 +29,8 @@ const Login = () => {
     return null;
   }
 
-  if (isLoading) {
+  // Se estiver carregando a sessão OU a configuração do site, mostre o loader
+  if (isLoading || isLoadingConfig) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -37,9 +38,13 @@ const Login = () => {
     );
   }
   
-  // Usando a URL Base64 ou URL externa diretamente
-  const loginBgStyle = siteConfig?.login_background_url 
-    ? { backgroundImage: `url(${siteConfig.login_background_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+  // Otimizando a URL da imagem de fundo de login
+  const loginBgUrl = siteConfig?.login_background_url 
+    ? `${siteConfig.login_background_url}?quality=70` // Adiciona parâmetro de qualidade
+    : undefined;
+    
+  const loginBgStyle = loginBgUrl
+    ? { backgroundImage: `url(${loginBgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
     : {};
 
   return (
