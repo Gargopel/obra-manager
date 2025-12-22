@@ -7,6 +7,8 @@ export default defineConfig(() => ({
   server: {
     host: "::",
     port: 8080,
+    // Adicionando fallback para index.html para rotas do React Router
+    historyApiFallback: true,
   },
   plugins: [dyadComponentTagger(), react()],
   resolve: {
