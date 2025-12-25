@@ -6,6 +6,7 @@ import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import useSiteConfig from '@/hooks/use-site-config';
+import ThemeToggle from './ThemeToggle'; // Importando ThemeToggle
 
 interface SidebarContentProps {
   onLinkClick?: () => void;
@@ -55,16 +56,20 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
         ))}
       </nav>
       
-      <div className="mt-auto pt-4 border-t border-border/50">
+      <div className="mt-auto pt-4 border-t border-border/50 space-y-2">
+        
+        {/* Theme Toggle */}
+        <ThemeToggle />
+        
         {profile && (
-          <div className="mb-4 text-sm text-muted-foreground">
+          <div className="pt-2 text-sm text-muted-foreground">
             Olá, {profile.first_name || 'Usuário'} ({profile.role})
           </div>
         )}
         
         {/* Botão Meu Perfil */}
         <Link to="/profile" onClick={onLinkClick}>
-          <Button variant="ghost" className="w-full justify-start mb-2">
+          <Button variant="ghost" className="w-full justify-start">
             <User className="w-4 h-4 mr-2" />
             Meu Perfil
           </Button>

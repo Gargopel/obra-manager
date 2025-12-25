@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, MapPin, PaintBucket, User, Calendar, CheckCircle, Clock, Truck, Layers } from 'lucide-react';
+import { Loader2, MapPin, PaintBucket, User, Calendar, CheckCircle, Clock, Truck, Layers, Trash2 } from 'lucide-react';
 import usePaintings, { PaintingDetail } from '@/hooks/use-paintings';
 import { format } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { PAINTING_STATUSES, PAINTING_COATS } from '@/utils/construction-structure';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { useSession } from '@/contexts/SessionContext'; // Importando useSession
 
 interface PaintingsListProps {
   filters: any;
@@ -21,7 +22,6 @@ const getStatusColor = (status: PaintingDetail['status']) => {
     case 'Em Andamento':
       return 'bg-blue-500 hover:bg-blue-600';
     case 'Finalizado':
-      return 'bg-yellow-500 hover:bg-yellow-600';
     case 'Entregue':
       return 'bg-green-500 hover:bg-green-600';
     default:
@@ -44,6 +44,7 @@ const getStatusIcon = (status: PaintingDetail['status']) => {
 
 const PaintingCard: React.FC<{ painting: PaintingDetail }> = ({ painting }) => {
   const queryClient = useQueryClient();
+  const { isAdmin } = useSession();
   const [currentStatus, setCurrentStatus] = React.useState(painting.status);
   const [currentCoat, setCurrentCoat] = React.useState(painting.coat);
   
@@ -72,11 +73,37 @@ const PaintingCard: React.FC<{ painting: PaintingDetail }> = ({ painting }) => {
       if (variables.status) showSuccess(`Status atualizado para ${variables.status}.`);
       if (variables.coat) showSuccess(`Demão atualizada para ${variables.coat}.`);
       queryClient.invalidateQueries({ queryKey: ['paintings'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
     },
     onError: (error) => {
       showError('Erro ao atualizar: ' + error.message);
     },
   });
+  
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('paintings')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      showSuccess('Registro de pintura excluído com sucesso.');
+      queryClient.invalidateQueries({ queryKey: ['paintings'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+    },
+    onError: (error) => {
+      showError('Erro ao excluir registro: ' + error.message);
+    },
+  });
+  
+  const handleDelete = () => {
+    if (window.confirm('Tem certeza que deseja excluir este registro de pintura permanentemente?')) {
+      deleteMutation.mutate(painting.id);
+    }
+  };
   
   const StatusIcon = getStatusIcon(painting.status);
   const statusColor = getStatusColor(painting.status);
@@ -166,13 +193,32 @@ const PaintingCard: React.FC<{ painting: PaintingDetail }> = ({ painting }) => {
                 <SelectValue placeholder="Demão" />
               </SelectTrigger>
               <SelectContent>
-                {PAINTING_COATS.map(coat => (
-                  <SelectItem key={coat} value={coat}>{coat}</SelectItem>
+                {PAINTING_COATS.map(c => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </div>
+        
+        <div className="flex justify-end pt-2">
+          {isAdmin && (
+            <Button 
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              variant="destructive"
+              size="sm"
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Excluir
+            </Button>
+          )}
+        </div>
+        
         {updateMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-primary mt-2" />}
         
       </CardContent>

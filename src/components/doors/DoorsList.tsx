@@ -1,7 +1,8 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MapPin, DoorClosed, Calendar, CheckCircle, Clock, Wrench, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, MapPin, DoorClosed, Calendar, CheckCircle, Clock, Wrench, AlertTriangle, Trash2 } from 'lucide-react';
 import useDoors, { DoorDetail } from '@/hooks/use-doors';
 import { format } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +11,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { DOOR_STATUSES } from '@/utils/construction-structure';
+import { useSession } from '@/contexts/SessionContext'; // Importando useSession
 
 interface DoorsListProps {
   filters: any;
@@ -49,6 +51,7 @@ const getStatusIcon = (status: DoorDetail['status']) => {
 
 const DoorCard: React.FC<{ door: DoorDetail }> = ({ door }) => {
   const queryClient = useQueryClient();
+  const { isAdmin } = useSession();
   const [currentStatus, setCurrentStatus] = React.useState(door.status);
   
   React.useEffect(() => {
@@ -76,6 +79,30 @@ const DoorCard: React.FC<{ door: DoorDetail }> = ({ door }) => {
     },
   });
   
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('doors')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      showSuccess('Registro de porta excluído com sucesso.');
+      queryClient.invalidateQueries({ queryKey: ['doors'] });
+    },
+    onError: (error) => {
+      showError('Erro ao excluir registro: ' + error.message);
+    },
+  });
+  
+  const handleDelete = () => {
+    if (window.confirm('Tem certeza que deseja excluir este registro de porta permanentemente?')) {
+      deleteMutation.mutate(door.id);
+    }
+  };
+  
   const StatusIcon = getStatusIcon(door.status);
   const statusColor = getStatusColor(door.status);
   
@@ -96,7 +123,7 @@ const DoorCard: React.FC<{ door: DoorDetail }> = ({ door }) => {
         </div>
         <CardDescription className="flex items-center text-sm mt-1">
           <DoorClosed className="w-4 h-4 mr-1" />
-          Local: {locationText}
+          Local: {door.door_type_name}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -104,7 +131,7 @@ const DoorCard: React.FC<{ door: DoorDetail }> = ({ door }) => {
         <div className="flex flex-wrap gap-2 text-sm">
           <Badge variant="secondary" className="flex items-center">
             <DoorClosed className="w-3 h-3 mr-1" />
-            Tipo: {door.door_type_name}
+            Local: {locationText}
           </Badge>
         </div>
         
@@ -119,27 +146,45 @@ const DoorCard: React.FC<{ door: DoorDetail }> = ({ door }) => {
           </div>
         </div>
         
-        {/* Atualização de Status */}
-        <div className="pt-2 flex items-center space-x-2">
-          <Label className="text-sm font-medium whitespace-nowrap">Mudar Status:</Label>
-          <Select 
-            value={currentStatus} 
-            onValueChange={(val) => {
-              setCurrentStatus(val as DoorDetail['status']);
-              updateStatusMutation.mutate(val as DoorDetail['status']);
-            }}
-            disabled={updateStatusMutation.isPending}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {DOOR_STATUSES.map(status => (
-                <SelectItem key={status} value={status}>{status}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {updateStatusMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+        {/* Atualização de Status e Exclusão */}
+        <div className="pt-2 flex justify-between items-center flex-wrap gap-2">
+          <div className="flex items-center space-x-2">
+            <Label className="text-sm font-medium whitespace-nowrap">Mudar Status:</Label>
+            <Select 
+              value={currentStatus} 
+              onValueChange={(val) => {
+                setCurrentStatus(val as DoorDetail['status']);
+                updateStatusMutation.mutate(val as DoorDetail['status']);
+              }}
+              disabled={updateStatusMutation.isPending}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {DOOR_STATUSES.map(status => (
+                  <SelectItem key={status} value={status}>{status}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {updateStatusMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+          </div>
+          
+          {isAdmin && (
+            <Button 
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              variant="destructive"
+              size="sm"
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Excluir
+            </Button>
+          )}
         </div>
         
       </CardContent>

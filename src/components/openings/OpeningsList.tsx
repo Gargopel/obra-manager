@@ -1,7 +1,8 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MapPin, DoorOpen, Calendar, CheckCircle, Clock, Truck } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, MapPin, DoorOpen, Calendar, CheckCircle, Clock, Truck, Trash2 } from 'lucide-react';
 import useOpenings, { OpeningDetail } from '@/hooks/use-openings';
 import { format } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { useSession } from '@/contexts/SessionContext'; // Importando useSession
 
 interface OpeningsListProps {
   filters: any;
@@ -19,7 +21,6 @@ const getStatusColor = (status: OpeningDetail['status']) => {
     case 'Em Andamento':
       return 'bg-blue-500 hover:bg-blue-600';
     case 'Finalizado':
-      return 'bg-yellow-500 hover:bg-yellow-600';
     case 'Entregue':
       return 'bg-green-500 hover:bg-green-600';
     default:
@@ -42,6 +43,7 @@ const getStatusIcon = (status: OpeningDetail['status']) => {
 
 const OpeningCard: React.FC<{ opening: OpeningDetail }> = ({ opening }) => {
   const queryClient = useQueryClient();
+  const { isAdmin } = useSession();
   const [currentStatus, setCurrentStatus] = React.useState(opening.status);
   
   React.useEffect(() => {
@@ -68,6 +70,30 @@ const OpeningCard: React.FC<{ opening: OpeningDetail }> = ({ opening }) => {
       showError('Erro ao atualizar status: ' + error.message);
     },
   });
+  
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('openings')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      showSuccess('Registro de abertura excluído com sucesso.');
+      queryClient.invalidateQueries({ queryKey: ['openings'] });
+    },
+    onError: (error) => {
+      showError('Erro ao excluir registro: ' + error.message);
+    },
+  });
+  
+  const handleDelete = () => {
+    if (window.confirm('Tem certeza que deseja excluir este registro de abertura permanentemente?')) {
+      deleteMutation.mutate(opening.id);
+    }
+  };
   
   const StatusIcon = getStatusIcon(opening.status);
   const statusColor = getStatusColor(opening.status);
@@ -116,27 +142,45 @@ const OpeningCard: React.FC<{ opening: OpeningDetail }> = ({ opening }) => {
           </div>
         </div>
         
-        {/* Atualização de Status */}
-        <div className="pt-2 flex items-center space-x-2">
-          <Label className="text-sm font-medium whitespace-nowrap">Mudar Status:</Label>
-          <Select 
-            value={currentStatus} 
-            onValueChange={(val) => {
-              setCurrentStatus(val as OpeningDetail['status']);
-              updateStatusMutation.mutate(val as OpeningDetail['status']);
-            }}
-            disabled={updateStatusMutation.isPending}
-          >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Em Andamento">Em Andamento</SelectItem>
-              <SelectItem value="Finalizado">Finalizado</SelectItem>
-              <SelectItem value="Entregue">Entregue</SelectItem>
-            </SelectContent>
-          </Select>
-          {updateStatusMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+        {/* Atualização de Status e Exclusão */}
+        <div className="pt-2 flex justify-between items-center flex-wrap gap-2">
+          <div className="flex items-center space-x-2">
+            <Label className="text-sm font-medium whitespace-nowrap">Mudar Status:</Label>
+            <Select 
+              value={currentStatus} 
+              onValueChange={(val) => {
+                setCurrentStatus(val as OpeningDetail['status']);
+                updateStatusMutation.mutate(val as OpeningDetail['status']);
+              }}
+              disabled={updateStatusMutation.isPending}
+            >
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Em Andamento">Em Andamento</SelectItem>
+                <SelectItem value="Finalizado">Finalizado</SelectItem>
+                <SelectItem value="Entregue">Entregue</SelectItem>
+              </SelectContent>
+            </Select>
+            {updateStatusMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+          </div>
+          
+          {isAdmin && (
+            <Button 
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              variant="destructive"
+              size="sm"
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Excluir
+            </Button>
+          )}
         </div>
         
       </CardContent>
