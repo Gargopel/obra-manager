@@ -2,13 +2,15 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, Clock, MapPin, Home, Wrench, Calendar } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, MapPin, Home, Wrench, Calendar, Trash2 } from 'lucide-react';
 import useDemands, { DemandDetail } from '@/hooks/use-demands';
 import { format } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useSession } from '@/contexts/SessionContext'; // Importando useSession
+import { deleteFile } from '@/integrations/supabase/storage'; // Importando deleteFile
 
 interface DemandsListProps {
   filters: any;
@@ -16,6 +18,7 @@ interface DemandsListProps {
 
 const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
   const queryClient = useQueryClient();
+  const { isAdmin } = useSession(); // Obtendo status de admin
   const isPending = demand.status === 'Pendente';
   
   const updateStatusMutation = useMutation({
@@ -42,9 +45,40 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
     },
   });
   
+  const deleteDemandMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // 1. Tenta deletar a imagem associada (se houver)
+      if (demand.image_url) {
+        await deleteFile(demand.image_url);
+      }
+      
+      // 2. Deleta a demanda do banco de dados
+      const { error } = await supabase
+        .from('demands')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      showSuccess('Demanda excluída com sucesso.');
+      queryClient.invalidateQueries({ queryKey: ['demands'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+    },
+    onError: (error) => {
+      showError('Erro ao excluir demanda: ' + error.message);
+    },
+  });
+
   const handleToggleStatus = () => {
     const newStatus = isPending ? 'Resolvido' : 'Pendente';
     updateStatusMutation.mutate(newStatus);
+  };
+  
+  const handleDelete = () => {
+    if (window.confirm('Tem certeza que deseja excluir esta demanda permanentemente?')) {
+      deleteDemandMutation.mutate(demand.id);
+    }
   };
   
   const statusColor = isPending ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600';
@@ -107,6 +141,23 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
                 </DialogContent>
               </Dialog>
             )}
+            
+            {/* Botão de Excluir (Apenas para Admin) */}
+            {isAdmin && (
+              <Button 
+                onClick={handleDelete}
+                disabled={deleteDemandMutation.isPending}
+                variant="destructive"
+                size="sm"
+              >
+                {deleteDemandMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+              </Button>
+            )}
+            
             <Button 
               onClick={handleToggleStatus}
               disabled={updateStatusMutation.isPending}
