@@ -3,22 +3,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Loader2, CheckCircle, Clock, MapPin, Home, Wrench, Calendar, Trash2 } from 'lucide-react';
-import useDemands, { DemandDetail } from '@/hooks/use-demands';
+import { DemandDetail } from '@/hooks/use-demands';
 import { format } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useSession } from '@/contexts/SessionContext'; // Importando useSession
-import { deleteFile } from '@/integrations/supabase/storage'; // Importando deleteFile
+import { useSession } from '@/contexts/SessionContext';
+import { deleteFile } from '@/integrations/supabase/storage';
 
-interface DemandsListProps {
-  filters: any;
+interface DemandCardProps {
+  demand: DemandDetail;
 }
 
-const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
+const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
   const queryClient = useQueryClient();
-  const { isAdmin } = useSession(); // Obtendo status de admin
+  const { isAdmin } = useSession();
   const isPending = demand.status === 'Pendente';
   
   const updateStatusMutation = useMutation({
@@ -178,36 +178,4 @@ const DemandCard: React.FC<{ demand: DemandDetail }> = ({ demand }) => {
   );
 };
 
-const DemandsList: React.FC<DemandsListProps> = ({ filters }) => {
-  const { data: demands, isLoading, error } = useDemands(filters);
-  
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
-  if (error) {
-    return <div className="text-red-500">Erro ao carregar demandas: {error.message}</div>;
-  }
-  
-  if (!demands || demands.length === 0) {
-    return (
-      <div className="text-center p-10 border border-dashed rounded-lg text-muted-foreground backdrop-blur-sm bg-white/50 dark:bg-gray-800/50">
-        Nenhuma demanda encontrada com os filtros aplicados.
-      </div>
-    );
-  }
-  
-  return (
-    <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {demands.map(demand => (
-        <DemandCard key={demand.id} demand={demand} />
-      ))}
-    </div>
-  );
-};
-
-export default DemandsList;
+export default DemandCard;
