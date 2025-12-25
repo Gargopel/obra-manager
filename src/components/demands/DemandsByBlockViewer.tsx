@@ -4,6 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Loader2, Building, ListChecks } from 'lucide-react';
 import useDemands, { DemandDetail } from '@/hooks/use-demands';
 import DemandCard from './DemandCard'; // Importando o card renomeado
+import { Badge } from '@/components/ui/badge'; // Importando Badge
 
 interface Filters {
   block_id?: string;
