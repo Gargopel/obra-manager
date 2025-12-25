@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { ListChecks, Filter, PlusCircle, LayoutGrid, List } from 'lucide-react';
+import { ListChecks, Filter, PlusCircle, LayoutGrid, List, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DemandsFilterPanel from '@/components/demands/DemandsFilterPanel';
 import DemandCard from '@/components/demands/DemandCard'; // Importando o card renomeado
 import CreateDemandDialog from '@/components/demands/CreateDemandDialog';
 import useSiteConfig from '@/hooks/use-site-config';
 import useDemands, { DemandDetail } from '@/hooks/use-demands'; // Importando useDemands para a lista simples
-import { Loader2 } from '@/components/ui/loader'; // Importando Loader2
 import DemandsByBlockViewer from '@/components/demands/DemandsByBlockViewer'; // Importando o novo viewer
 
 const SimpleDemandsList: React.FC<{ filters: any }> = ({ filters }) => {
