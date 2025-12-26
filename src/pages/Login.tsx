@@ -32,7 +32,7 @@ const Login = () => {
   // Se estiver carregando a sessão OU a configuração do site, mostre o loader
   if (isLoading || isLoadingConfig) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -49,7 +49,7 @@ const Login = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-900 transition-all duration-500" 
+      className="min-h-screen flex items-center justify-center p-4 bg-background transition-all duration-500" 
       style={loginBgStyle}
     >
       <Card className="w-full max-w-md backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-2xl border border-white/30 dark:border-gray-700/50">

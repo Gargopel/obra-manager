@@ -15,7 +15,7 @@ const Layout: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -35,7 +35,7 @@ const Layout: React.FC = () => {
     : {};
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950" style={mainBgStyle}>
+    <div className="flex min-h-screen bg-background" style={mainBgStyle}>
       {/* Sidebar (Desktop) */}
       {!isMobile && <Sidebar />}
       
