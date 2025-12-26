@@ -5,10 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Plus, User, Mail, Save, X, Edit } from 'lucide-react';
+import { Loader2, Plus, User, Mail, Save, X, Edit, Ruler } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge'; // Importando Badge
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface Profile {
   id: string;
@@ -16,22 +18,20 @@ interface Profile {
   last_name: string | null;
   role: 'Admin' | 'Membro';
   email: string;
-  position?: string | null; // Adicionando position
+  position?: string | null;
+  can_measure: boolean;
 }
 
 const fetchUsersWithProfiles = async (): Promise<Profile[]> => {
-  // Fetch profiles first
   const { data: profilesData, error: profilesError } = await supabase
     .from('profiles')
-    .select('id, first_name, last_name, role, position'); // Incluindo position
+    .select('id, first_name, last_name, role, position, can_measure');
   
   if (profilesError) throw profilesError;
 
-  // Para simplificar, vamos usar um placeholder para o email
-  // Em um cenário real, você pode querer buscar os emails via uma função edge ou serviço
   return profilesData.map(p => ({
     ...p,
-    email: `ID: ${p.id.substring(0, 8)}...`, // Placeholder para email
+    email: `ID: ${p.id.substring(0, 8)}...`,
   })) as Profile[];
 };
 
@@ -44,6 +44,7 @@ const ManageUsers: React.FC = () => {
   const [editingFirstName, setEditingFirstName] = useState('');
   const [editingLastName, setEditingLastName] = useState('');
   const [editingPosition, setEditingPosition] = useState('');
+  const [editingCanMeasure, setEditingCanMeasure] = useState(false);
 
   const { data: users, isLoading, error } = useQuery<Profile[], Error>({
     queryKey: ['usersWithProfiles'],
@@ -62,33 +63,30 @@ const ManageUsers: React.FC = () => {
           }
         }
       });
-      
       if (error) throw error;
     },
     onSuccess: () => {
-      showSuccess('Usuário criado com sucesso! Ele pode fazer login agora.');
+      showSuccess('Usuário criado com sucesso!');
       setNewEmail('');
       setNewPassword('');
       queryClient.invalidateQueries({ queryKey: ['usersWithProfiles'] });
     },
-    onError: (error) => {
-      showError('Erro ao criar usuário: ' + error.message);
-    },
+    onError: (error) => showError('Erro ao criar usuário: ' + error.message),
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: async ({ id, first_name, last_name, position, role }: { 
+    mutationFn: async ({ id, first_name, last_name, position, role, can_measure }: { 
       id: string; 
       first_name: string; 
       last_name: string; 
       position: string;
       role: 'Admin' | 'Membro';
+      can_measure: boolean;
     }) => {
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ first_name, last_name, position, role })
+        .update({ first_name, last_name, position, role, can_measure })
         .eq('id', id);
-      
       if (profileError) throw profileError;
     },
     onSuccess: () => {
@@ -96,9 +94,7 @@ const ManageUsers: React.FC = () => {
       setEditingId(null);
       queryClient.invalidateQueries({ queryKey: ['usersWithProfiles'] });
     },
-    onError: (error) => {
-      showError('Erro ao atualizar perfil: ' + error.message);
-    },
+    onError: (error) => showError('Erro ao atualizar perfil: ' + error.message),
   });
 
   const handleEditProfile = (user: Profile) => {
@@ -107,6 +103,7 @@ const ManageUsers: React.FC = () => {
     setEditingLastName(user.last_name || '');
     setEditingPosition(user.position || '');
     setEditingRole(user.role);
+    setEditingCanMeasure(user.can_measure);
   };
 
   const handleSaveProfile = (id: string) => {
@@ -115,7 +112,8 @@ const ManageUsers: React.FC = () => {
       first_name: editingFirstName.trim(),
       last_name: editingLastName.trim(),
       position: editingPosition.trim(),
-      role: editingRole
+      role: editingRole,
+      can_measure: editingCanMeasure
     });
   };
 
@@ -133,7 +131,6 @@ const ManageUsers: React.FC = () => {
         <CardTitle className="flex items-center"><User className="w-5 h-5 mr-2" /> Gerenciar Usuários</CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Formulário de Criação de Usuário */}
         <div className="mb-8 p-4 border rounded-lg bg-accent/50">
           <h3 className="text-lg font-semibold mb-3">Criar Novo Usuário</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -159,15 +156,14 @@ const ManageUsers: React.FC = () => {
           </div>
         </div>
 
-        {/* Tabela de Usuários */}
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email/ID</TableHead>
-                <TableHead>Cargo</TableHead>
-                <TableHead className="w-[200px]">Função</TableHead>
+                <TableHead>Medição</TableHead>
+                <TableHead className="w-[150px]">Função</TableHead>
                 <TableHead className="w-[100px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -197,13 +193,16 @@ const ManageUsers: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     {editingId === user.id ? (
-                      <Input 
-                        value={editingPosition} 
-                        onChange={(e) => setEditingPosition(e.target.value)} 
-                        placeholder="Cargo"
-                      />
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`measure-${user.id}`} 
+                          checked={editingCanMeasure} 
+                          onCheckedChange={(val) => setEditingCanMeasure(!!val)}
+                        />
+                        <Label htmlFor={`measure-${user.id}`} className="text-xs">Privilégio</Label>
+                      </div>
                     ) : (
-                      user.position || 'N/A'
+                      user.can_measure ? <Badge variant="outline" className="text-blue-500 border-blue-200"><Ruler className="w-3 h-3 mr-1" /> Sim</Badge> : <span className="text-xs text-muted-foreground">Não</span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -227,28 +226,15 @@ const ManageUsers: React.FC = () => {
                   <TableCell className="text-right space-x-2">
                     {editingId === user.id ? (
                       <>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleSaveProfile(user.id)} 
-                          disabled={updateProfileMutation.isPending}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => handleSaveProfile(user.id)} disabled={updateProfileMutation.isPending}>
                           <Save className="w-4 h-4 text-green-600" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => setEditingId(null)}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => setEditingId(null)}>
                           <X className="w-4 h-4 text-muted-foreground" />
                         </Button>
                       </>
                     ) : (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleEditProfile(user)}
-                      >
+                      <Button variant="ghost" size="icon" onClick={() => handleEditProfile(user)}>
                         <Edit className="w-4 h-4" />
                       </Button>
                     )}

@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ListChecks, Settings, LogOut, LayoutDashboard, User, BrickWall, PaintBucket, DoorOpen, DoorClosed, Users } from 'lucide-react';
+import { ListChecks, Settings, LogOut, LayoutDashboard, User, BrickWall, PaintBucket, DoorOpen, DoorClosed, Users, Ruler } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import useSiteConfig from '@/hooks/use-site-config';
-import ThemeToggle from './ThemeToggle'; // Importando ThemeToggle
+import ThemeToggle from './ThemeToggle';
 
 interface SidebarContentProps {
   onLinkClick?: () => void;
@@ -18,19 +18,18 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
   
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) {
-      showError('Erro ao sair: ' + error.message);
-    }
+    if (error) showError('Erro ao sair: ' + error.message);
   };
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { name: 'Demandas', icon: ListChecks, path: '/demands' },
+    { name: 'Medição', icon: Ruler, path: '/measurements' }, // Novo Item
     { name: 'Cerâmicas', icon: BrickWall, path: '/ceramics' },
     { name: 'Pinturas', icon: PaintBucket, path: '/paintings' },
     { name: 'Aberturas', icon: DoorOpen, path: '/openings' },
     { name: 'Portas', icon: DoorClosed, path: '/doors' },
-    { name: 'Funcionários', icon: Users, path: '/employees' }, // Novo item de navegação
+    { name: 'Funcionários', icon: Users, path: '/employees' },
   ];
 
   if (isAdmin) {
@@ -58,29 +57,19 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
       </nav>
       
       <div className="mt-auto pt-4 border-t border-border/50 space-y-2">
-        
-        {/* Theme Toggle */}
         <ThemeToggle />
-        
         {profile && (
           <div className="pt-2 text-sm text-muted-foreground">
             Olá, {profile.first_name || 'Usuário'} ({profile.role})
           </div>
         )}
-        
-        {/* Botão Meu Perfil */}
         <Link to="/profile" onClick={onLinkClick}>
           <Button variant="ghost" className="w-full justify-start">
             <User className="w-4 h-4 mr-2" />
             Meu Perfil
           </Button>
         </Link>
-        
-        <Button 
-          variant="ghost" 
-          className="w-full justify-start text-destructive hover:bg-destructive/10"
-          onClick={handleLogout}
-        >
+        <Button variant="ghost" className="w-full justify-start text-destructive hover:bg-destructive/10" onClick={handleLogout}>
           <LogOut className="w-4 h-4 mr-2" />
           Sair
         </Button>
