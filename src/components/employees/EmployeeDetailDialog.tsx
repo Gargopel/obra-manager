@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Briefcase, MapPin, Wrench, Calendar, Clock, Star } from 'lucide-react';
+import { Loader2, Briefcase, MapPin, Wrench, Calendar, Clock, Star, CheckCircle } from 'lucide-react';
 import useEmployeeAssignments from '@/hooks/use-employee-assignments';
 import { EmployeeWithStats, Assignment } from '@/hooks/use-employees';
 import { format } from 'date-fns';
