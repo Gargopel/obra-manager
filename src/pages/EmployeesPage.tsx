@@ -6,11 +6,15 @@ import EmployeesFilterPanel from '@/components/employees/EmployeesFilterPanel';
 import EmployeesList from '@/components/employees/EmployeesList';
 import CreateEmployeeDialog from '@/components/employees/CreateEmployeeDialog';
 import CreateAssignmentDialog from '@/components/employees/CreateAssignmentDialog';
+import EmployeeDetailDialog from '@/components/employees/EmployeeDetailDialog'; // Importando o novo diálogo
+import { EmployeeWithStats } from '@/hooks/use-employees';
 
 const EmployeesPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isCreateEmployeeOpen, setIsCreateEmployeeOpen] = useState(false);
   const [isCreateAssignmentOpen, setIsCreateAssignmentOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false); // Novo estado para detalhes
+  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeWithStats | null>(null); // Novo estado para funcionário selecionado
   const [filters, setFilters] = useState({});
   const { data: siteConfig } = useSiteConfig();
   
@@ -19,6 +23,11 @@ const EmployeesPage: React.FC = () => {
       document.title = siteConfig.site_name + ' - Funcionários';
     }
   }, [siteConfig]);
+  
+  const handleViewDetails = (employee: EmployeeWithStats) => {
+    setSelectedEmployee(employee);
+    setIsDetailOpen(true);
+  };
 
   return (
     <div className="space-y-8">
@@ -55,10 +64,17 @@ const EmployeesPage: React.FC = () => {
         <EmployeesFilterPanel onApplyFilters={setFilters} />
       )}
 
-      <EmployeesList filters={filters} />
+      <EmployeesList filters={filters} onViewDetails={handleViewDetails} />
 
       <CreateEmployeeDialog open={isCreateEmployeeOpen} onOpenChange={setIsCreateEmployeeOpen} />
       <CreateAssignmentDialog open={isCreateAssignmentOpen} onOpenChange={setIsCreateAssignmentOpen} />
+      
+      {/* Diálogo de Detalhes do Funcionário */}
+      <EmployeeDetailDialog 
+        open={isDetailOpen} 
+        onOpenChange={setIsDetailOpen} 
+        employee={selectedEmployee}
+      />
     </div>
   );
 };

@@ -15,6 +15,7 @@ interface EmployeesListProps {
     service_type_id?: string;
     name_search?: string;
   };
+  onViewDetails: (employee: EmployeeWithStats) => void; // Nova prop
 }
 
 type SortCriterion = typeof RATING_CRITERIA[number] | 'totalScore' | 'name';
@@ -36,7 +37,7 @@ const RATING_ICONS: Record<typeof RATING_CRITERIA[number], React.FC<any>> = {
   organization: TrendingUp,
 };
 
-const EmployeeCard: React.FC<{ employee: EmployeeWithStats }> = ({ employee }) => {
+const EmployeeCard: React.FC<{ employee: EmployeeWithStats, onViewDetails: (employee: EmployeeWithStats) => void }> = ({ employee, onViewDetails }) => {
   const totalScore = employee.averageRatings.speed !== null 
     ? parseFloat(((employee.averageRatings.speed + employee.averageRatings.quality + employee.averageRatings.cleanliness + employee.averageRatings.organization) / 4).toFixed(1))
     : null;
@@ -92,12 +93,21 @@ const EmployeeCard: React.FC<{ employee: EmployeeWithStats }> = ({ employee }) =
           })}
         </div>
         
+        <Button 
+          onClick={() => onViewDetails(employee)} 
+          className="w-full mt-4"
+          variant="outline"
+        >
+          <Briefcase className="w-4 h-4 mr-2" />
+          Ver Atribuições
+        </Button>
+        
       </CardContent>
     </Card>
   );
 };
 
-const EmployeesList: React.FC<EmployeesListProps> = ({ filters }) => {
+const EmployeesList: React.FC<EmployeesListProps> = ({ filters, onViewDetails }) => {
   const { data: employees, isLoading, error } = useEmployees(filters);
   const { data: configData, isLoading: isLoadingConfig } = useConfigData();
   
@@ -210,7 +220,7 @@ const EmployeesList: React.FC<EmployeesListProps> = ({ filters }) => {
       {/* Lista de Funcionários */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {sortedEmployees.map(employee => (
-          <EmployeeCard key={employee.id} employee={employee} />
+          <EmployeeCard key={employee.id} employee={employee} onViewDetails={onViewDetails} />
         ))}
       </div>
     </div>
