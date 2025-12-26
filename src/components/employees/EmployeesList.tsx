@@ -2,13 +2,17 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, User, Briefcase, Star, Zap, CheckCircle, TrendingUp, Filter, SortAsc, SortDesc, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, User, Briefcase, Star, Zap, CheckCircle, TrendingUp, Filter, SortAsc, SortDesc, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import useEmployees, { EmployeeWithStats } from '@/hooks/use-employees';
 import useConfigData from '@/hooks/use-config-data';
 import { RATING_CRITERIA } from '@/utils/construction-structure';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useSession } from '@/contexts/SessionContext';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { showSuccess, showError } from '@/utils/toast';
 
 interface EmployeesListProps {
   filters: {
@@ -38,6 +42,9 @@ const RATING_ICONS: Record<typeof RATING_CRITERIA[number], React.FC<any>> = {
 };
 
 const EmployeeCard: React.FC<{ employee: EmployeeWithStats, onViewDetails: (employee: EmployeeWithStats) => void }> = ({ employee, onViewDetails }) => {
+  const { isAdmin } = useSession();
+  const queryClient = useQueryClient();
+  
   const totalScore = employee.averageRatings.speed !== null 
     ? parseFloat(((employee.averageRatings.speed + employee.averageRatings.quality + employee.averageRatings.cleanliness + employee.averageRatings.organization) / 4).toFixed(1))
     : null;
@@ -45,6 +52,31 @@ const EmployeeCard: React.FC<{ employee: EmployeeWithStats, onViewDetails: (empl
   const completionPercentage = employee.totalAssignments > 0 
     ? Math.round((employee.completedAssignments / employee.totalAssignments) * 100)
     : 0;
+    
+  const deleteEmployeeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // A exclusão do funcionário deve ser em cascata para as atribuições (RLS deve permitir)
+      const { error } = await supabase
+        .from('employees')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      showSuccess(`Funcionário ${employee.name} excluído com sucesso.`);
+      queryClient.invalidateQueries({ queryKey: ['employeesWithStats'] });
+    },
+    onError: (error) => {
+      showError('Erro ao excluir funcionário. Verifique se há restrições de chave estrangeira.');
+    },
+  });
+  
+  const handleDelete = () => {
+    if (window.confirm(`Tem certeza que deseja excluir o funcionário ${employee.name} e todas as suas atribuições?`)) {
+      deleteEmployeeMutation.mutate(employee.id);
+    }
+  };
 
   return (
     <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50 transition-all duration-300 hover:shadow-2xl">
@@ -93,14 +125,31 @@ const EmployeeCard: React.FC<{ employee: EmployeeWithStats, onViewDetails: (empl
           })}
         </div>
         
-        <Button 
-          onClick={() => onViewDetails(employee)} 
-          className="w-full mt-4"
-          variant="outline"
-        >
-          <Briefcase className="w-4 h-4 mr-2" />
-          Ver Atribuições
-        </Button>
+        <div className="flex space-x-2 pt-2">
+          <Button 
+            onClick={() => onViewDetails(employee)} 
+            className="flex-1"
+            variant="outline"
+          >
+            <Briefcase className="w-4 h-4 mr-2" />
+            Ver Atribuições
+          </Button>
+          
+          {isAdmin && (
+            <Button 
+              onClick={handleDelete}
+              disabled={deleteEmployeeMutation.isPending}
+              variant="destructive"
+              size="icon"
+            >
+              {deleteEmployeeMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+            </Button>
+          )}
+        </div>
         
       </CardContent>
     </Card>

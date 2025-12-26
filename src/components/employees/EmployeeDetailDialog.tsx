@@ -3,12 +3,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Briefcase, MapPin, Wrench, Calendar, Clock, Star, CheckCircle } from 'lucide-react';
+import { Loader2, Briefcase, MapPin, Wrench, Calendar, Clock, Star, CheckCircle, Trash2 } from 'lucide-react';
 import useEmployeeAssignments from '@/hooks/use-employee-assignments';
 import { EmployeeWithStats, Assignment } from '@/hooks/use-employees';
 import { format } from 'date-fns';
 import RateAssignmentDialog from './RateAssignmentDialog';
 import { RATING_CRITERIA } from '@/utils/construction-structure';
+import { useSession } from '@/contexts/SessionContext';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { showSuccess, showError } from '@/utils/toast';
 
 interface EmployeeDetailDialogProps {
   open: boolean;
@@ -24,6 +28,8 @@ const RATING_LABELS: Record<typeof RATING_CRITERIA[number], string> = {
 };
 
 const AssignmentCard: React.FC<{ assignment: Assignment, onRate: (assignment: Assignment) => void }> = ({ assignment, onRate }) => {
+  const { isAdmin } = useSession();
+  const queryClient = useQueryClient();
   const isPending = assignment.status === 'Em Andamento';
   
   const locationText = assignment.apartment_number 
@@ -31,6 +37,32 @@ const AssignmentCard: React.FC<{ assignment: Assignment, onRate: (assignment: As
     : assignment.floor_number
       ? `${assignment.floor_number}º Andar`
       : assignment.location_type;
+      
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('assignments')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      showSuccess('Atribuição excluída com sucesso.');
+      // Invalida as queries para atualizar a lista de atribuições e as estatísticas do funcionário
+      queryClient.invalidateQueries({ queryKey: ['employeesWithStats'] });
+      queryClient.invalidateQueries({ queryKey: ['employeeAssignments', assignment.employee_id] });
+    },
+    onError: (error) => {
+      showError('Erro ao excluir atribuição: ' + error.message);
+    },
+  });
+  
+  const handleDelete = () => {
+    if (window.confirm('Tem certeza que deseja excluir esta atribuição permanentemente?')) {
+      deleteAssignmentMutation.mutate(assignment.id);
+    }
+  };
 
   return (
     <Card className="border-l-4 border-blue-500 dark:border-blue-700 bg-background/80 shadow-md">
@@ -55,30 +87,48 @@ const AssignmentCard: React.FC<{ assignment: Assignment, onRate: (assignment: As
           Início: {format(new Date(assignment.created_at), 'dd/MM/yyyy HH:mm')}
         </div>
         
-        {isPending ? (
-          <Button 
-            onClick={() => onRate(assignment)} 
-            className="w-full mt-3 bg-green-600 hover:bg-green-700"
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Finalizar e Avaliar
-          </Button>
-        ) : (
-          <div className="mt-3 p-3 border rounded-md bg-accent/50 space-y-1">
-            <p className="text-sm font-semibold flex items-center text-green-600 dark:text-green-400">
+        <div className="flex justify-between items-center mt-3">
+          {isPending ? (
+            <Button 
+              onClick={() => onRate(assignment)} 
+              className="flex-1 mr-2 bg-green-600 hover:bg-green-700"
+            >
               <CheckCircle className="w-4 h-4 mr-2" />
-              Finalizado em: {assignment.finished_at ? format(new Date(assignment.finished_at), 'dd/MM/yyyy') : 'N/A'}
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {RATING_CRITERIA.map(criterion => (
-                <div key={criterion} className="flex items-center">
-                  <Star className="w-3 h-3 mr-1 text-yellow-500 fill-yellow-500" />
-                  {RATING_LABELS[criterion]}: {assignment[`rating_${criterion}`] || 'N/A'}
-                </div>
-              ))}
+              Finalizar e Avaliar
+            </Button>
+          ) : (
+            <div className="flex-1 p-3 border rounded-md bg-accent/50 space-y-1">
+              <p className="text-sm font-semibold flex items-center text-green-600 dark:text-green-400">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Finalizado em: {assignment.finished_at ? format(new Date(assignment.finished_at), 'dd/MM/yyyy') : 'N/A'}
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {RATING_CRITERIA.map(criterion => (
+                  <div key={criterion} className="flex items-center">
+                    <Star className="w-3 h-3 mr-1 text-yellow-500 fill-yellow-500" />
+                    {RATING_LABELS[criterion]}: {assignment[`rating_${criterion}`] || 'N/A'}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+          
+          {isAdmin && (
+            <Button 
+              onClick={handleDelete}
+              disabled={deleteAssignmentMutation.isPending}
+              variant="destructive"
+              size="icon"
+              className="flex-shrink-0"
+            >
+              {deleteAssignmentMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
