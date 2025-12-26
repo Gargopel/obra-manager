@@ -16,6 +16,7 @@ import CeramicsPage from "./pages/CeramicsPage";
 import PaintingsPage from "./pages/PaintingsPage";
 import OpeningsPage from "./pages/OpeningsPage";
 import DoorsPage from "./pages/DoorsPage";
+import EmployeesPage from "./pages/EmployeesPage"; // Importando EmployeesPage
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
                 <Route path="/paintings" element={<PaintingsPage />} />
                 <Route path="/openings" element={<OpeningsPage />} />
                 <Route path="/doors" element={<DoorsPage />} />
+                <Route path="/employees" element={<EmployeesPage />} /> {/* Nova Rota */}
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

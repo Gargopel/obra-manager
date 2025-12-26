@@ -48,3 +48,18 @@ export const DOOR_LOCATIONS = ['Entrada', 'Q1', 'Q2', 'Banheiro'];
 
 // Status de rastreamento de portas
 export const DOOR_STATUSES = ['Falta', 'Instalada', 'Corrigir', 'Entregue', 'Falta Arremate'];
+
+// Tipos de Localização para Atribuições de Funcionários
+export const ASSIGNMENT_LOCATION_TYPES = [
+  'Bloco Todo',
+  'Andar Específico',
+  'Apartamento Específico',
+  'Circulação Toda',
+  'Andar da Circulação',
+];
+
+// Status de Atribuição
+export const ASSIGNMENT_STATUSES = ['Em Andamento', 'Finalizado'];
+
+// Critérios de Avaliação
+export const RATING_CRITERIA = ['speed', 'quality', 'cleanliness', 'organization'] as const;
