@@ -78,9 +78,11 @@ const CreateDoorDialog: React.FC<CreateDoorDialogProps> = ({ open, onOpenChange 
           <div className="space-y-6 py-4">
             <div className="space-y-2">
               <Label>Blocos *</Label>
-              <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedBlocks} onValueChange={setSelectedBlocks}>
-                {BLOCKS.map(b => <ToggleGroupItem key={b} value={b} className="w-10 h-10">{b}</ToggleGroupItem>)}
-              </ToggleGroup>
+              <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
+                <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedBlocks} onValueChange={setSelectedBlocks}>
+                  {BLOCKS.map(b => <ToggleGroupItem key={b} value={b} className="w-10 h-10">{b}</ToggleGroupItem>)}
+                </ToggleGroup>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -93,7 +95,7 @@ const CreateDoorDialog: React.FC<CreateDoorDialogProps> = ({ open, onOpenChange 
 
             <div className="space-y-2">
               <Label>Apartamentos *</Label>
-              <div className="p-2 border rounded-md bg-background/50">
+              <div className="p-2 border rounded-md bg-background/50 max-h-48 overflow-y-auto">
                 <ToggleGroup type="multiple" variant="outline" className="grid grid-cols-4 gap-2" value={selectedApartments} onValueChange={setSelectedApartments}>
                   {APARTMENT_NUMBERS.map(a => <ToggleGroupItem key={a} value={a} className="text-xs h-8">{a}</ToggleGroupItem>)}
                 </ToggleGroup>

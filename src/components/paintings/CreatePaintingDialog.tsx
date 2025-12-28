@@ -77,7 +77,6 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
             });
           });
         } else if (!isApartmentRequired && !isFloorBased) {
-          // Caso genérico (ex: Fachada ou algo sem apto/andar específico se houver no futuro)
           payloads.push({
             user_id: user.id,
             block_id: block,
@@ -118,14 +117,16 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
             {/* Blocos */}
             <div className="space-y-2">
               <Label>Blocos *</Label>
-              <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedBlocks} onValueChange={setSelectedBlocks}>
-                {BLOCKS.map(b => (
-                  <ToggleGroupItem key={b} value={b} className="w-10 h-10">{b}</ToggleGroupItem>
-                ))}
-              </ToggleGroup>
+              <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
+                <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedBlocks} onValueChange={setSelectedBlocks}>
+                  {BLOCKS.map(b => (
+                    <ToggleGroupItem key={b} value={b} className="w-10 h-10">{b}</ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </div>
             </div>
 
-            {/* Local e Config */}
+            {/* Configuração */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Local da Pintura</Label>
@@ -152,11 +153,11 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
               </Select>
             </div>
 
-            {/* Sub-locais (Aptos ou Andares) */}
+            {/* Apartamentos - COM ROLAGEM CORRIGIDA */}
             {isApartmentRequired && (
               <div className="space-y-2">
                 <Label>Apartamentos *</Label>
-                <div className="p-2 border rounded-md bg-background/50">
+                <div className="p-2 border rounded-md bg-background/50 max-h-48 overflow-y-auto">
                   <ToggleGroup type="multiple" variant="outline" className="grid grid-cols-4 gap-2" value={selectedApartments} onValueChange={setSelectedApartments}>
                     {APARTMENT_NUMBERS.map(a => <ToggleGroupItem key={a} value={a} className="text-xs h-8">{a}</ToggleGroupItem>)}
                   </ToggleGroup>
@@ -164,12 +165,15 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
               </div>
             )}
 
+            {/* Andares - COM ROLAGEM CORRIGIDA */}
             {isFloorBased && (
               <div className="space-y-2">
                 <Label>Andares *</Label>
-                <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedFloors} onValueChange={setSelectedFloors}>
-                  {[1, 2, 3, 4, 5].map(f => <ToggleGroupItem key={f} value={f.toString()} className="w-12 h-10">{f}º</ToggleGroupItem>)}
-                </ToggleGroup>
+                <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
+                  <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedFloors} onValueChange={setSelectedFloors}>
+                    {[1, 2, 3, 4, 5].map(f => <ToggleGroupItem key={f} value={f.toString()} className="w-12 h-10">{f}º</ToggleGroupItem>)}
+                  </ToggleGroup>
+                </div>
               </div>
             )}
           </div>

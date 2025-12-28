@@ -26,8 +26,8 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
   
   const [blockId, setBlockId] = useState('');
   const [locationType, setLocationType] = useState(ASSIGNMENT_LOCATION_TYPES[0]);
-  const [selectedApartments, setSelectedApartments] = useState<string[]>([]); // Múltiplos apartamentos
-  const [selectedFloors, setSelectedFloors] = useState<string[]>([]); // Múltiplos andares
+  const [selectedApartments, setSelectedApartments] = useState<string[]>([]);
+  const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
   const [serviceTypeId, setServiceTypeId] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -50,7 +50,6 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
       let payloads = [];
 
       if (isFloorBased && selectedFloors.length > 0) {
-        // Múltiplos andares
         payloads = selectedFloors.map(floor => ({
           user_id: user.id,
           block_id: blockId,
@@ -61,18 +60,16 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
           notes: notes.trim() || null,
         }));
       } else if (isApartmentBased && selectedApartments.length > 0) {
-        // Múltiplos apartamentos
         payloads = selectedApartments.map(apt => ({
           user_id: user.id,
           block_id: blockId,
           location_type: locationType,
           apartment_number: apt,
-          floor_number: parseInt(apt.charAt(0)), // Deriva o andar do número do apto (ex: 101 -> 1)
+          floor_number: parseInt(apt.charAt(0)),
           service_type_id: serviceTypeId || null,
           notes: notes.trim() || null,
         }));
       } else {
-        // Bloco todo ou Circulação toda (Registro único)
         payloads = [{
           user_id: user.id,
           block_id: blockId,
@@ -131,7 +128,7 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
             {isApartmentBased && (
               <div className="space-y-3">
                 <Label>Apartamentos (Selecione um ou mais) *</Label>
-                <div className="p-2 border rounded-md bg-background/50">
+                <div className="p-2 border rounded-md bg-background/50 max-h-48 overflow-y-auto">
                   <ToggleGroup 
                     type="multiple" 
                     variant="outline" 
@@ -150,30 +147,31 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
                     ))}
                   </ToggleGroup>
                 </div>
-                <p className="text-[10px] text-muted-foreground italic">Dica: Selecione múltiplos apartamentos para criar várias solicitações de uma vez.</p>
               </div>
             )}
 
             {isFloorBased && (
               <div className="space-y-3">
                 <Label>Andares (Selecione um ou mais) *</Label>
-                <ToggleGroup 
-                  type="multiple" 
-                  variant="outline" 
-                  className="justify-start flex-wrap gap-2"
-                  value={selectedFloors}
-                  onValueChange={setSelectedFloors}
-                >
-                  {[1, 2, 3, 4, 5].map(f => (
-                    <ToggleGroupItem 
-                      key={f} 
-                      value={f.toString()} 
-                      className="w-12 h-10 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                    >
-                      {f}º
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
+                <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
+                  <ToggleGroup 
+                    type="multiple" 
+                    variant="outline" 
+                    className="justify-start flex-wrap gap-2"
+                    value={selectedFloors}
+                    onValueChange={setSelectedFloors}
+                  >
+                    {[1, 2, 3, 4, 5].map(f => (
+                      <ToggleGroupItem 
+                        key={f} 
+                        value={f.toString()} 
+                        className="w-12 h-10 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        {f}º
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </div>
               </div>
             )}
 
