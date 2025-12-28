@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
-import { Settings, Users, Wrench, Home, Lock, User, Building, Globe, BrickWall, PaintBucket, DoorOpen, DoorClosed, HardHat } from 'lucide-react';
+import { Settings, Users, Wrench, Home, Lock, User, Building, Globe, BrickWall, PaintBucket, DoorOpen, DoorClosed, HardHat, FileText } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import ManageUsers from '@/components/settings/ManageUsers';
 import ManageConfig from '@/components/settings/ManageConfig';
 import { Card } from '@/components/ui/card';
@@ -15,12 +16,12 @@ import ManageOpeningTypes from '@/components/settings/ManageOpeningTypes';
 import ManageDoorTypes from '@/components/settings/ManageDoorTypes';
 import ManageContractors from '@/components/settings/ManageContractors';
 import useSiteConfig from '@/hooks/use-site-config';
+import { exportManualToPdf } from '@/utils/pdf-export';
 
 const SettingsPage: React.FC = () => {
   const { isAdmin, isLoading } = useSession();
   const { data: siteConfig } = useSiteConfig();
   const location = useLocation();
-  const navigate = useNavigate();
   
   const urlParams = new URLSearchParams(location.search);
   const initialTab = urlParams.get('tab') || 'profile';
@@ -44,12 +45,26 @@ const SettingsPage: React.FC = () => {
     );
   }
   
+  const handleDownloadManual = () => {
+    exportManualToPdf(siteConfig?.site_name);
+  };
+
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold text-foreground/90 backdrop-blur-sm p-2 rounded-lg">
-        <Settings className="inline-block w-8 h-8 mr-2 text-primary" />
-        Configurações do Sistema
-      </h1>
+      <div className="flex flex-wrap justify-between items-center gap-4">
+        <h1 className="text-3xl font-bold text-foreground/90 backdrop-blur-sm p-2 rounded-lg">
+          <Settings className="inline-block w-8 h-8 mr-2 text-primary" />
+          Configurações do Sistema
+        </h1>
+        <Button 
+          variant="outline" 
+          onClick={handleDownloadManual}
+          className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50"
+        >
+          <FileText className="w-4 h-4 mr-2" />
+          Baixar Manual (PDF)
+        </Button>
+      </div>
       
       <Tabs defaultValue={initialTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 md:grid-cols-11 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
