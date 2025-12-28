@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ListChecks, Filter, PlusCircle, LayoutGrid, List, Loader2 } from 'lucide-react';
+import { ListChecks, Filter, PlusCircle, LayoutGrid, List, Loader2, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DemandsFilterPanel from '@/components/demands/DemandsFilterPanel';
 import DemandCard from '@/components/demands/DemandCard';
@@ -8,29 +8,12 @@ import useSiteConfig from '@/hooks/use-site-config';
 import useDemands, { DemandDetail } from '@/hooks/use-demands';
 import DemandsByBlockViewer from '@/components/demands/DemandsByBlockViewer';
 import { Badge } from '@/components/ui/badge';
+import { exportToPdf } from '@/utils/pdf-export';
 
-const SimpleDemandsList: React.FC<{ filters: any }> = ({ filters }) => {
-  const { data: demands, isLoading, error } = useDemands(filters);
-  
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
-  if (error) {
-    return <div className="text-red-500">Erro ao carregar demandas: {error.message}</div>;
-  }
-  
-  if (!demands || demands.length === 0) {
-    return (
-      <div className="text-center p-10 border border-dashed rounded-lg text-muted-foreground backdrop-blur-sm bg-white/50 dark:bg-gray-800/50">
-        Nenhuma demanda encontrada com os filtros aplicados.
-      </div>
-    );
-  }
+const SimpleDemandsList: React.FC<{ demands: DemandDetail[], isLoading: boolean, error: Error | null }> = ({ demands, isLoading, error }) => {
+  if (isLoading) return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (error) return <div className="text-red-500">Erro ao carregar demandas: {error.message}</div>;
+  if (!demands || demands.length === 0) return <div className="text-center p-10 border border-dashed rounded-lg text-muted-foreground backdrop-blur-sm bg-white/50 dark:bg-gray-800/50">Nenhuma demanda encontrada com os filtros aplicados.</div>;
   
   return (
     <div className="space-y-4">
@@ -39,14 +22,11 @@ const SimpleDemandsList: React.FC<{ filters: any }> = ({ filters }) => {
         demandas encontradas
       </div>
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {demands.map(demand => (
-          <DemandCard key={demand.id} demand={demand} />
-        ))}
+        {demands.map(demand => <DemandCard key={demand.id} demand={demand} />)}
       </div>
     </div>
   );
 };
-
 
 const DemandsPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
@@ -54,12 +34,34 @@ const DemandsPage: React.FC = () => {
   const [isGroupedView, setIsGroupedView] = useState(false);
   const [filters, setFilters] = useState({});
   const { data: siteConfig } = useSiteConfig();
+  const { data: demands, isLoading, error } = useDemands(filters);
   
   React.useEffect(() => {
-    if (siteConfig?.site_name) {
-      document.title = siteConfig.site_name + ' - Demandas';
-    }
+    if (siteConfig?.site_name) document.title = siteConfig.site_name + ' - Demandas';
   }, [siteConfig]);
+
+  const handleExportPdf = () => {
+    if (!demands || demands.length === 0) return;
+    
+    const columns = ['Bloco', 'Apto', 'Serviço', 'Cômodo', 'Status', 'Empreiteiro', 'Descrição'];
+    const rows = demands.map(d => [
+      d.block_id,
+      d.apartment_number,
+      d.service_type_name,
+      d.room_name,
+      d.status,
+      d.contractor_name || '-',
+      d.description || '-'
+    ]);
+
+    exportToPdf({
+      title: 'Relatório de Demandas',
+      filename: 'demandas',
+      columns,
+      rows,
+      siteName: siteConfig?.site_name
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -69,48 +71,25 @@ const DemandsPage: React.FC = () => {
           Gerenciamento de Demandas
         </h1>
         <div className="flex space-x-4 flex-shrink-0">
-          
-          <Button 
-            variant="outline" 
-            onClick={() => setIsGroupedView(!isGroupedView)}
-            className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50"
-          >
-            {isGroupedView ? (
-              <>
-                <List className="w-4 h-4 mr-2" />
-                Ver em Lista
-              </>
-            ) : (
-              <>
-                <LayoutGrid className="w-4 h-4 mr-2" />
-                Agrupar por Bloco
-              </>
-            )}
+          <Button variant="outline" onClick={handleExportPdf} disabled={!demands || demands.length === 0} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30">
+            <FileText className="w-4 h-4 mr-2" /> PDF
           </Button>
-          
-          <Button 
-            variant="outline" 
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            {isFilterOpen ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+          <Button variant="outline" onClick={() => setIsGroupedView(!isGroupedView)} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30">
+            {isGroupedView ? <><List className="w-4 h-4 mr-2" /> Lista</> : <><LayoutGrid className="w-4 h-4 mr-2" /> Blocos</>}
           </Button>
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <PlusCircle className="w-4 h-4 mr-2" />
-            Nova Demanda
+          <Button variant="outline" onClick={() => setIsFilterOpen(!isFilterOpen)} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30">
+            <Filter className="w-4 h-4 mr-2" /> Filtros
           </Button>
+          <Button onClick={() => setIsCreateOpen(true)}><PlusCircle className="w-4 h-4 mr-2" /> Nova Demanda</Button>
         </div>
       </div>
 
-      {isFilterOpen && (
-        <DemandsFilterPanel onApplyFilters={setFilters} />
-      )}
+      {isFilterOpen && <DemandsFilterPanel onApplyFilters={setFilters} />}
 
       {isGroupedView ? (
         <DemandsByBlockViewer filters={filters} />
       ) : (
-        <SimpleDemandsList filters={filters} />
+        <SimpleDemandsList demands={demands || []} isLoading={isLoading} error={error} />
       )}
 
       <CreateDemandDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
