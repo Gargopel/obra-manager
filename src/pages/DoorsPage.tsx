@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { DoorClosed, Filter, PlusCircle } from 'lucide-react';
+import { DoorClosed, Filter, PlusCircle, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DoorsFilterPanel from '@/components/doors/DoorsFilterPanel';
 import DoorsList from '@/components/doors/DoorsList';
+import DoorsByBlockViewer from '@/components/doors/DoorsByBlockViewer';
 import CreateDoorDialog from '@/components/doors/CreateDoorDialog';
 import useSiteConfig from '@/hooks/use-site-config';
 
 const DoorsPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isGroupedView, setIsGroupedView] = useState(false);
   const [filters, setFilters] = useState({});
   const { data: siteConfig } = useSiteConfig();
   
@@ -26,27 +28,18 @@ const DoorsPage: React.FC = () => {
           Rastreamento de Portas
         </h1>
         <div className="flex space-x-4 flex-shrink-0">
-          <Button 
-            variant="outline" 
-            onClick={() => setIsFilterOpen(!isFilterOpen)}
-            className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            {isFilterOpen ? 'Ocultar Filtros' : 'Mostrar Filtros'}
+          <Button variant="outline" onClick={() => setIsGroupedView(!isGroupedView)} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30">
+            {isGroupedView ? <><List className="w-4 h-4 mr-2" /> Lista</> : <><LayoutGrid className="w-4 h-4 mr-2" /> Blocos</>}
           </Button>
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <PlusCircle className="w-4 h-4 mr-2" />
-            Registrar Porta
+          <Button variant="outline" onClick={() => setIsFilterOpen(!isFilterOpen)} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30">
+            <Filter className="w-4 h-4 mr-2" /> Filtros
           </Button>
+          <Button onClick={() => setIsCreateOpen(true)}><PlusCircle className="w-4 h-4 mr-2" /> Registrar Porta</Button>
         </div>
       </div>
 
-      {isFilterOpen && (
-        <DoorsFilterPanel onApplyFilters={setFilters} />
-      )}
-
-      <DoorsList filters={filters} />
-
+      {isFilterOpen && <DoorsFilterPanel onApplyFilters={setFilters} />}
+      {isGroupedView ? <DoorsByBlockViewer filters={filters} /> : <DoorsList filters={filters} />}
       <CreateDoorDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
     </div>
   );

@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { BLOCKS, APARTMENT_NUMBERS, DOOR_LOCATIONS } from '@/utils/construction-structure';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { BLOCKS, APARTMENT_NUMBERS } from '@/utils/construction-structure';
 import useConfigData from '@/hooks/use-config-data';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,139 +23,91 @@ const CreateDoorDialog: React.FC<CreateDoorDialogProps> = ({ open, onOpenChange 
   const { user } = useSession();
   const queryClient = useQueryClient();
   
-  const [blockId, setBlockId] = useState('');
-  const [apartmentNumber, setApartmentNumber] = useState('');
+  const [selectedBlocks, setSelectedBlocks] = useState<string[]>([]);
+  const [selectedApartments, setSelectedApartments] = useState<string[]>([]);
   const [doorTypeId, setDoorTypeId] = useState('');
   
   const resetForm = () => {
-    setBlockId('');
-    setApartmentNumber('');
+    setSelectedBlocks([]);
+    setSelectedApartments([]);
     setDoorTypeId('');
-  };
-  
-  // Calcula o andar com base no número do apartamento
-  const getFloorNumber = (aptNumber: string): number | undefined => {
-    if (aptNumber.length === 3 || aptNumber.length === 4) {
-      return parseInt(aptNumber.charAt(0), 10);
-    }
-    return undefined;
   };
   
   const createDoorMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Usuário não autenticado.');
-      if (!blockId || !apartmentNumber || !doorTypeId) {
+      if (selectedBlocks.length === 0 || selectedApartments.length === 0 || !doorTypeId) {
         throw new Error('Preencha todos os campos obrigatórios.');
       }
       
-      const floorNumber = getFloorNumber(apartmentNumber);
-      if (floorNumber === undefined) {
-        throw new Error('Número de apartamento inválido.');
-      }
-      
-      const { error: insertError } = await supabase
-        .from('doors')
-        .insert({
-          user_id: user.id,
-          block_id: blockId,
-          apartment_number: apartmentNumber,
-          floor_number: floorNumber,
-          door_type_id: doorTypeId,
-          status: 'Falta', // Default status
+      const payloads: any[] = [];
+
+      selectedBlocks.forEach(block => {
+        selectedApartments.forEach(apt => {
+          payloads.push({
+            user_id: user.id,
+            block_id: block,
+            apartment_number: apt,
+            floor_number: parseInt(apt.charAt(0), 10),
+            door_type_id: doorTypeId,
+            status: 'Falta',
+          });
         });
-        
-      if (insertError) throw new Error('Erro ao registrar porta: ' + insertError.message);
+      });
+      
+      const { error: insertError } = await supabase.from('doors').insert(payloads);
+      if (insertError) throw insertError;
     },
     onSuccess: () => {
-      showSuccess('Porta registrada com sucesso!');
+      showSuccess('Portas registradas com sucesso!');
       resetForm();
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: ['doors'] });
     },
-    onError: (error) => {
-      showError(error.message);
-    },
+    onError: (error: any) => showError(error.message),
   });
   
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createDoorMutation.mutate();
-  };
-  
-  const isFormValid = blockId && apartmentNumber && doorTypeId;
+  const isFormValid = selectedBlocks.length > 0 && selectedApartments.length > 0 && doorTypeId;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/70 dark:bg-gray-800/70 shadow-2xl border border-white/30 dark:border-gray-700/50">
-        <DialogHeader>
-          <DialogTitle>Registrar Porta</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          
-          {/* Bloco e Apartamento */}
-          <div className="grid grid-cols-2 gap-4">
+    <Dialog open={open} onOpenChange={(val) => { if(!val) resetForm(); onOpenChange(val); }}>
+      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/90 dark:bg-gray-900/90 shadow-2xl border border-white/20 flex flex-col max-h-[90vh]">
+        <DialogHeader><DialogTitle>Registrar Portas (Lote)</DialogTitle></DialogHeader>
+        
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label htmlFor="block">Bloco *</Label>
-              <Select value={blockId} onValueChange={setBlockId}>
-                <SelectTrigger id="block">
-                  <SelectValue placeholder="Selecione o Bloco" />
-                </SelectTrigger>
-                <SelectContent>
-                  {BLOCKS.map(block => (
-                    <SelectItem key={block} value={block}>{`Bloco ${block}`}</SelectItem>
-                  ))}
-                </SelectContent>
+              <Label>Blocos *</Label>
+              <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedBlocks} onValueChange={setSelectedBlocks}>
+                {BLOCKS.map(b => <ToggleGroupItem key={b} value={b} className="w-10 h-10">{b}</ToggleGroupItem>)}
+              </ToggleGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Tipo/Local da Porta *</Label>
+              <Select value={doorTypeId} onValueChange={setDoorTypeId} disabled={isLoadingConfig}>
+                <SelectTrigger><SelectValue placeholder="Selecione o Tipo" /></SelectTrigger>
+                <SelectContent>{configData?.doorTypes.map(type => <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="apartment">Apartamento *</Label>
-              <Select 
-                value={apartmentNumber} 
-                onValueChange={setApartmentNumber}
-              >
-                <SelectTrigger id="apartment">
-                  <SelectValue placeholder="Selecione o Apto" />
-                </SelectTrigger>
-                <SelectContent>
-                  {APARTMENT_NUMBERS.map(apt => (
-                    <SelectItem key={apt} value={apt}>{`Apto ${apt}`}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Apartamentos *</Label>
+              <div className="p-2 border rounded-md bg-background/50">
+                <ToggleGroup type="multiple" variant="outline" className="grid grid-cols-4 gap-2" value={selectedApartments} onValueChange={setSelectedApartments}>
+                  {APARTMENT_NUMBERS.map(a => <ToggleGroupItem key={a} value={a} className="text-xs h-8">{a}</ToggleGroupItem>)}
+                </ToggleGroup>
+              </div>
             </div>
           </div>
-          
-          {/* Tipo de Porta */}
-          <div className="space-y-2">
-            <Label htmlFor="door-type">Local da Porta (Tipo) *</Label>
-            <Select 
-              value={doorTypeId} 
-              onValueChange={setDoorTypeId}
-              disabled={isLoadingConfig}
-            >
-              <SelectTrigger id="door-type">
-                <SelectValue placeholder="Selecione o Tipo/Local" />
-              </SelectTrigger>
-              <SelectContent>
-                {configData?.doorTypes.map(type => (
-                  <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <DialogFooter>
-            <Button 
-              type="submit" 
-              disabled={createDoorMutation.isPending || !isFormValid}
-            >
-              {createDoorMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : 'Registrar Porta'}
-            </Button>
-          </DialogFooter>
-        </form>
+        </ScrollArea>
+        
+        <DialogFooter className="pt-4 border-t">
+          <Button onClick={() => createDoorMutation.mutate()} disabled={createDoorMutation.isPending || !isFormValid} className="w-full">
+            {createDoorMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            Registrar {selectedBlocks.length * selectedApartments.length} Portas
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

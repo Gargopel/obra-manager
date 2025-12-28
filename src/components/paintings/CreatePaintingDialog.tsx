@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { BLOCKS, APARTMENT_NUMBERS, PAINTING_LOCATIONS, PAINTING_COATS } from '@/utils/construction-structure';
 import useConfigData from '@/hooks/use-config-data';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,168 +23,164 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
   const { user } = useSession();
   const queryClient = useQueryClient();
   
-  const [blockId, setBlockId] = useState('');
-  const [apartmentNumber, setApartmentNumber] = useState<string | undefined>(undefined);
+  const [selectedBlocks, setSelectedBlocks] = useState<string[]>([]);
+  const [selectedApartments, setSelectedApartments] = useState<string[]>([]);
+  const [selectedFloors, setSelectedFloors] = useState<string[]>([]);
   const [painterId, setPainterId] = useState('');
   const [location, setLocation] = useState<string>(PAINTING_LOCATIONS[0]);
-  const [coat, setCoat] = useState<string>(PAINTING_COATS[0]); // Novo estado para demão
+  const [coat, setCoat] = useState<string>(PAINTING_COATS[0]);
   
   const isApartmentRequired = location !== 'Circulação';
-  
-  useEffect(() => {
-    // Reset apartment number if location is 'Circulação'
-    if (!isApartmentRequired) {
-      setApartmentNumber(undefined);
-    }
-  }, [location, isApartmentRequired]);
+  const isFloorBased = location === 'Circulação';
 
   const resetForm = () => {
-    setBlockId('');
-    setApartmentNumber(undefined);
+    setSelectedBlocks([]);
+    setSelectedApartments([]);
+    setSelectedFloors([]);
     setPainterId('');
     setLocation(PAINTING_LOCATIONS[0]);
-    setCoat(PAINTING_COATS[0]); // Resetar demão
+    setCoat(PAINTING_COATS[0]);
   };
   
   const createPaintingMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Usuário não autenticado.');
-      if (!blockId || !painterId || (isApartmentRequired && !apartmentNumber) || !coat) {
-        throw new Error('Preencha todos os campos obrigatórios.');
+      if (selectedBlocks.length === 0 || !painterId || !coat) {
+        throw new Error('Preencha os campos obrigatórios (Blocos, Pintor e Demão).');
       }
       
-      const { error: insertError } = await supabase
-        .from('paintings')
-        .insert({
-          user_id: user.id,
-          block_id: blockId,
-          apartment_number: apartmentNumber || null,
-          painter_id: painterId,
-          location: location,
-          status: 'Em Andamento', // Default status
-          coat: coat, // Incluindo demão
-        });
-        
-      if (insertError) throw new Error('Erro ao registrar pintura: ' + insertError.message);
+      const payloads: any[] = [];
+
+      selectedBlocks.forEach(block => {
+        if (isApartmentRequired && selectedApartments.length > 0) {
+          selectedApartments.forEach(apt => {
+            payloads.push({
+              user_id: user.id,
+              block_id: block,
+              apartment_number: apt,
+              painter_id: painterId,
+              location: location,
+              status: 'Em Andamento',
+              coat: coat,
+            });
+          });
+        } else if (isFloorBased && selectedFloors.length > 0) {
+          selectedFloors.forEach(floor => {
+            payloads.push({
+              user_id: user.id,
+              block_id: block,
+              apartment_number: null,
+              painter_id: painterId,
+              location: `${location} - ${floor}º Andar`,
+              status: 'Em Andamento',
+              coat: coat,
+            });
+          });
+        } else if (!isApartmentRequired && !isFloorBased) {
+          // Caso genérico (ex: Fachada ou algo sem apto/andar específico se houver no futuro)
+          payloads.push({
+            user_id: user.id,
+            block_id: block,
+            apartment_number: null,
+            painter_id: painterId,
+            location: location,
+            status: 'Em Andamento',
+            coat: coat,
+          });
+        }
+      });
+
+      if (payloads.length === 0) throw new Error('Selecione ao menos um local (Apartamento ou Andar).');
+      
+      const { error: insertError } = await supabase.from('paintings').insert(payloads);
+      if (insertError) throw insertError;
     },
     onSuccess: () => {
-      showSuccess('Serviço de pintura registrado com sucesso!');
+      showSuccess('Serviços de pintura registrados com sucesso!');
       resetForm();
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: ['paintings'] });
     },
-    onError: (error) => {
-      showError(error.message);
-    },
+    onError: (error: any) => showError(error.message),
   });
   
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createPaintingMutation.mutate();
-  };
-  
-  const isFormValid = blockId && painterId && coat && (!isApartmentRequired || apartmentNumber);
+  const isFormValid = selectedBlocks.length > 0 && painterId && coat && 
+                      (!isApartmentRequired || selectedApartments.length > 0) &&
+                      (!isFloorBased || selectedFloors.length > 0);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/70 dark:bg-gray-800/70 shadow-2xl border border-white/30 dark:border-gray-700/50">
-        <DialogHeader>
-          <DialogTitle>Registrar Serviço de Pintura</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          
-          {/* Localização da Pintura */}
-          <div className="space-y-2">
-            <Label htmlFor="location">Local da Pintura</Label>
-            <Select value={location} onValueChange={setLocation}>
-              <SelectTrigger id="location">
-                <SelectValue placeholder="Selecione o Local" />
-              </SelectTrigger>
-              <SelectContent>
-                {PAINTING_LOCATIONS.map(loc => (
-                  <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+    <Dialog open={open} onOpenChange={(val) => { if(!val) resetForm(); onOpenChange(val); }}>
+      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/90 dark:bg-gray-900/90 shadow-2xl border border-white/20 flex flex-col max-h-[90vh]">
+        <DialogHeader><DialogTitle>Registrar Pintura (Lote)</DialogTitle></DialogHeader>
+        
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-6 py-4">
+            {/* Blocos */}
+            <div className="space-y-2">
+              <Label>Blocos *</Label>
+              <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedBlocks} onValueChange={setSelectedBlocks}>
+                {BLOCKS.map(b => (
+                  <ToggleGroupItem key={b} value={b} className="w-10 h-10">{b}</ToggleGroupItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          {/* Bloco e Apartamento */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="block">Bloco</Label>
-              <Select value={blockId} onValueChange={setBlockId}>
-                <SelectTrigger id="block">
-                  <SelectValue placeholder="Selecione o Bloco" />
-                </SelectTrigger>
-                <SelectContent>
-                  {BLOCKS.map(block => (
-                    <SelectItem key={block} value={block}>{`Bloco ${block}`}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              </ToggleGroup>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="apartment">Apartamento {isApartmentRequired ? '*' : '(Opcional)'}</Label>
-              <Select 
-                value={apartmentNumber || ''} 
-                onValueChange={setApartmentNumber}
-                disabled={!isApartmentRequired}
-              >
-                <SelectTrigger id="apartment">
-                  <SelectValue placeholder="Selecione o Apto" />
-                </SelectTrigger>
-                <SelectContent>
-                  {APARTMENT_NUMBERS.map(apt => (
-                    <SelectItem key={apt} value={apt}>{`Apto ${apt}`}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+            {/* Local e Config */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Local da Pintura</Label>
+                <Select value={location} onValueChange={(val) => { setLocation(val); setSelectedApartments([]); setSelectedFloors([]); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{PAINTING_LOCATIONS.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Demão</Label>
+                <Select value={coat} onValueChange={setCoat}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{PAINTING_COATS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-          
-          {/* Pintor e Demão */}
-          <div className="grid grid-cols-2 gap-4">
+
+            {/* Pintor */}
             <div className="space-y-2">
-              <Label htmlFor="painter">Pintor Responsável</Label>
+              <Label>Pintor Responsável</Label>
               <Select value={painterId} onValueChange={setPainterId} disabled={isLoadingConfig}>
-                <SelectTrigger id="painter">
-                  <SelectValue placeholder="Selecione o Pintor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {configData?.painters.map(painter => (
-                    <SelectItem key={painter.id} value={painter.id}>{painter.name}</SelectItem>
-                  ))}
-                </SelectContent>
+                <SelectTrigger><SelectValue placeholder="Selecione o Pintor" /></SelectTrigger>
+                <SelectContent>{configData?.painters.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="coat">Demão</Label>
-              <Select value={coat} onValueChange={setCoat}>
-                <SelectTrigger id="coat">
-                  <SelectValue placeholder="Selecione a Demão" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAINTING_COATS.map(c => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
+            {/* Sub-locais (Aptos ou Andares) */}
+            {isApartmentRequired && (
+              <div className="space-y-2">
+                <Label>Apartamentos *</Label>
+                <div className="p-2 border rounded-md bg-background/50">
+                  <ToggleGroup type="multiple" variant="outline" className="grid grid-cols-4 gap-2" value={selectedApartments} onValueChange={setSelectedApartments}>
+                    {APARTMENT_NUMBERS.map(a => <ToggleGroupItem key={a} value={a} className="text-xs h-8">{a}</ToggleGroupItem>)}
+                  </ToggleGroup>
+                </div>
+              </div>
+            )}
+
+            {isFloorBased && (
+              <div className="space-y-2">
+                <Label>Andares *</Label>
+                <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedFloors} onValueChange={setSelectedFloors}>
+                  {[1, 2, 3, 4, 5].map(f => <ToggleGroupItem key={f} value={f.toString()} className="w-12 h-10">{f}º</ToggleGroupItem>)}
+                </ToggleGroup>
+              </div>
+            )}
           </div>
-          
-          <DialogFooter>
-            <Button 
-              type="submit" 
-              disabled={createPaintingMutation.isPending || !isFormValid}
-            >
-              {createPaintingMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : 'Registrar Pintura'}
-            </Button>
-          </DialogFooter>
-        </form>
+        </ScrollArea>
+        
+        <DialogFooter className="pt-4 border-t">
+          <Button onClick={() => createPaintingMutation.mutate()} disabled={createPaintingMutation.isPending || !isFormValid} className="w-full">
+            {createPaintingMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            Registrar {selectedBlocks.length * (isApartmentRequired ? selectedApartments.length : isFloorBased ? selectedFloors.length : 1)} Registros
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
