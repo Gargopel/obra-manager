@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { APARTMENT_NUMBERS, DEMAND_STATUSES } from '@/utils/construction-structure';
 import useConfigData from '@/hooks/use-config-data';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, HardHat } from 'lucide-react';
 
 interface Filters {
   block_id?: string;
@@ -12,6 +12,8 @@ interface Filters {
   service_type_id?: string;
   room_id?: string;
   status?: string;
+  is_contractor_pending?: boolean;
+  contractor_id?: string;
 }
 
 interface DemandsFilterPanelProps {
@@ -22,7 +24,7 @@ const DemandsFilterPanel: React.FC<DemandsFilterPanelProps> = ({ onApplyFilters 
   const { data: configData, isLoading: isLoadingConfig } = useConfigData();
   const [currentFilters, setCurrentFilters] = useState<Filters>({});
 
-  const handleFilterChange = (key: keyof Filters, value: string | undefined) => {
+  const handleFilterChange = (key: keyof Filters, value: any) => {
     setCurrentFilters(prev => ({
       ...prev,
       [key]: value === 'all' ? undefined : value,
@@ -35,7 +37,6 @@ const DemandsFilterPanel: React.FC<DemandsFilterPanelProps> = ({ onApplyFilters 
   };
 
   useEffect(() => {
-    // Apply filters immediately on change for a fast experience
     onApplyFilters(currentFilters);
   }, [currentFilters, onApplyFilters]);
 
@@ -44,13 +45,13 @@ const DemandsFilterPanel: React.FC<DemandsFilterPanelProps> = ({ onApplyFilters 
       <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-border/50">
         <CardTitle className="text-lg flex items-center">
           <Filter className="w-5 h-5 mr-2" />
-          Filtros Combinados
+          Filtros de Demandas
         </CardTitle>
         <Button variant="ghost" size="sm" onClick={handleClearFilters}>
           <X className="w-4 h-4 mr-1" /> Limpar
         </Button>
       </CardHeader>
-      <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         
         {/* Bloco */}
         <Select 
@@ -85,6 +86,22 @@ const DemandsFilterPanel: React.FC<DemandsFilterPanelProps> = ({ onApplyFilters 
           </SelectContent>
         </Select>
 
+        {/* Status */}
+        <Select 
+          value={currentFilters.status || 'all'} 
+          onValueChange={(val) => handleFilterChange('status', val)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Status</SelectItem>
+            {DEMAND_STATUSES.map(status => (
+              <SelectItem key={status} value={status}>{status}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         {/* Tipo de Serviço */}
         <Select 
           value={currentFilters.service_type_id || 'all'} 
@@ -102,35 +119,41 @@ const DemandsFilterPanel: React.FC<DemandsFilterPanelProps> = ({ onApplyFilters 
           </SelectContent>
         </Select>
 
-        {/* Cômodo */}
+        {/* Pendência Empreiteiro */}
         <Select 
-          value={currentFilters.room_id || 'all'} 
-          onValueChange={(val) => handleFilterChange('room_id', val)}
-          disabled={isLoadingConfig}
+          value={currentFilters.is_contractor_pending === undefined ? 'all' : currentFilters.is_contractor_pending.toString()} 
+          onValueChange={(val) => {
+            const boolVal = val === 'all' ? undefined : val === 'true';
+            handleFilterChange('is_contractor_pending', boolVal);
+            if (boolVal === false) handleFilterChange('contractor_id', 'all'); // Limpa se escolher "Não"
+          }}
         >
-          <SelectTrigger>
-            <SelectValue placeholder="Cômodo" />
+          <SelectTrigger className="border-red-200 dark:border-red-900">
+            <div className="flex items-center">
+              <HardHat className="w-4 h-4 mr-2 text-red-500" />
+              <SelectValue placeholder="Pendência de Empreit.?" />
+            </div>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os Cômodos</SelectItem>
-            {configData?.rooms.map(room => (
-              <SelectItem key={room.id} value={room.id}>{room.name}</SelectItem>
-            ))}
+            <SelectItem value="all">Qualquer Pendência</SelectItem>
+            <SelectItem value="true">Sim, de Empreiteiro</SelectItem>
+            <SelectItem value="false">Não, Internas</SelectItem>
           </SelectContent>
         </Select>
 
-        {/* Status */}
+        {/* Selecionar Empreiteiro */}
         <Select 
-          value={currentFilters.status || 'all'} 
-          onValueChange={(val) => handleFilterChange('status', val)}
+          value={currentFilters.contractor_id || 'all'} 
+          onValueChange={(val) => handleFilterChange('contractor_id', val)}
+          disabled={isLoadingConfig || currentFilters.is_contractor_pending === false}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder="Qual Empreiteiro?" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os Status</SelectItem>
-            {DEMAND_STATUSES.map(status => (
-              <SelectItem key={status} value={status}>{status}</SelectItem>
+            <SelectItem value="all">Todos os Empreiteiros</SelectItem>
+            {configData?.contractors.map(c => (
+              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>

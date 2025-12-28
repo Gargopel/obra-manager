@@ -7,6 +7,8 @@ interface Filters {
   service_type_id?: string;
   room_id?: string;
   status?: string;
+  is_contractor_pending?: boolean; // Novo filtro
+  contractor_id?: string; // Novo filtro
 }
 
 export interface DemandDetail {
@@ -23,9 +25,9 @@ export interface DemandDetail {
   room_name: string;
   user_first_name: string | null;
   user_last_name: string | null;
-  is_contractor_pending: boolean; // Novo campo
-  contractor_id: string | null; // Novo campo
-  contractor_name: string | null; // Novo campo (da view)
+  is_contractor_pending: boolean;
+  contractor_id: string | null;
+  contractor_name: string | null;
 }
 
 const useDemands = (filters: Filters) => {
@@ -45,6 +47,20 @@ const useDemands = (filters: Filters) => {
       }
       if (filters.status) {
         query = query.eq('status', filters.status);
+      }
+      if (filters.service_type_id) {
+        query = query.eq('service_type_id', filters.service_type_id);
+      }
+      if (filters.room_id) {
+        query = query.eq('room_id', filters.room_id);
+      }
+      
+      // Aplicando novos filtros de empreiteiro
+      if (filters.is_contractor_pending !== undefined) {
+        query = query.eq('is_contractor_pending', filters.is_contractor_pending);
+      }
+      if (filters.contractor_id) {
+        query = query.eq('contractor_id', filters.contractor_id);
       }
 
       const { data, error } = await query;
