@@ -8,7 +8,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Layout from "./components/Layout";
 import { Loader2 } from "lucide-react";
 
-// Lazy loading das páginas para performance e resiliência
+// Importações diretas para evitar problemas de carregamento em redes instáveis
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import DemandsPage from "./pages/DemandsPage";
@@ -27,12 +27,12 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 5000,
     },
   },
 });
 
-// Componente para gerenciar o estado inicial do App
-const AppContent = () => {
+const AppRoutes = () => {
   const { isLoading, session } = useSession();
 
   if (isLoading) {
@@ -45,9 +45,13 @@ const AppContent = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={!session ? <Login /> : <Navigate to="/" replace />} />
+      {/* Rota pública: Login */}
+      <Route 
+        path="/login" 
+        element={session ? <Navigate to="/" replace /> : <Login />} 
+      />
       
-      {/* Rotas Protegidas */}
+      {/* Rotas Protegidas dentro do Layout */}
       <Route element={session ? <Layout /> : <Navigate to="/login" replace />}>
         <Route path="/" element={<Index />} />
         <Route path="/demands" element={<DemandsPage />} />
@@ -61,6 +65,7 @@ const AppContent = () => {
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
 
+      {/* Fallback para 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -74,7 +79,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <SessionProvider>
-            <AppContent />
+            <AppRoutes />
           </SessionProvider>
         </BrowserRouter>
       </TooltipProvider>

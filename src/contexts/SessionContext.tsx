@@ -27,46 +27,32 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Função isolada para buscar perfil
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (error) throw error;
-      setProfile(data as Profile);
-    } catch (err) {
-      console.error('Erro ao carregar perfil:', err);
-      setProfile(null);
-    }
-  };
-
   useEffect(() => {
     let mounted = true;
 
-    // 1. Verificar sessão inicial imediatamente
-    const initializeAuth = async () => {
-      const { data: { session: initialSession } } = await supabase.auth.getSession();
-      
-      if (!mounted) return;
-
-      if (initialSession) {
-        setSession(initialSession);
-        await fetchProfile(initialSession.user.id);
+    // Função para buscar o perfil de forma segura
+    const fetchProfile = async (userId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        if (error) throw error;
+        if (mounted) setProfile(data as Profile);
+      } catch (err) {
+        console.error('Erro ao carregar perfil:', err);
+        if (mounted) setProfile(null);
       }
-      
-      setIsLoading(false);
     };
 
-    initializeAuth();
-
-    // 2. Escutar mudanças de estado (Login, Logout, Token Refresh)
+    // O onAuthStateChange cuida do estado inicial (INITIAL_SESSION) 
+    // e de todas as mudanças subsequentes.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       if (!mounted) return;
 
+      console.log(`Auth Event: ${event}`);
       setSession(currentSession);
       
       if (currentSession) {
@@ -75,6 +61,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setProfile(null);
       }
 
+      // Só paramos o loading após processar o evento inicial
       setIsLoading(false);
     });
 
