@@ -10,7 +10,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { PAINTING_STATUSES, PAINTING_COATS } from '@/utils/construction-structure';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { useSession } from '@/contexts/SessionContext';
 
 interface PaintingsListProps {
@@ -123,9 +122,16 @@ const PaintingsList: React.FC<PaintingsListProps> = ({ filters }) => {
   const { data: paintings, isLoading, error } = usePaintings(filters);
   if (isLoading) return <div className="flex justify-center p-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!paintings || paintings.length === 0) return <div className="text-center p-10 border border-dashed rounded-lg text-muted-foreground">Nenhuma pintura encontrada.</div>;
+  
   return (
-    <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {paintings.map(p => <PaintingCard key={p.id} painting={p} />)}
+    <div className="space-y-4">
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Badge variant="outline" className="mr-2">{paintings.length}</Badge>
+        registros de pintura encontrados
+      </div>
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {paintings.map(p => <PaintingCard key={p.id} painting={p} />)}
+      </div>
     </div>
   );
 };

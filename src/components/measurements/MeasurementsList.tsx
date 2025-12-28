@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, MapPin, Wrench, Calendar, Ruler, CheckCircle2, AlertCircle, Edit, Trash2 } from 'lucide-react';
+import { Loader2, MapPin, Wrench, Calendar, CheckCircle2, Trash2 } from 'lucide-react';
 import useMeasurements, { MeasurementDetail } from '@/hooks/use-measurements';
 import { format } from 'date-fns';
 import { useSession } from '@/contexts/SessionContext';
@@ -96,11 +96,17 @@ const MeasurementsList: React.FC<{ filters: any }> = ({ filters }) => {
   if (isLoading) return <div className="flex justify-center p-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {measurements?.map(m => <MeasurementCard key={m.id} measurement={m} onCheck={handleCheck} />)}
-      {measurements?.length === 0 && <p className="col-span-full text-center text-muted-foreground p-10">Nenhuma solicitação encontrada.</p>}
-      
-      <CheckMeasurementDialog open={isCheckOpen} onOpenChange={setIsCheckOpen} measurement={selectedMeasurement} />
+    <div className="space-y-4">
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Badge variant="outline" className="mr-2">{measurements?.length || 0}</Badge>
+        registros de medição encontrados
+      </div>
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {measurements?.map(m => <MeasurementCard key={m.id} measurement={m} onCheck={handleCheck} />)}
+        {measurements?.length === 0 && <p className="col-span-full text-center text-muted-foreground p-10">Nenhuma solicitação encontrada.</p>}
+        
+        <CheckMeasurementDialog open={isCheckOpen} onOpenChange={setIsCheckOpen} measurement={selectedMeasurement} />
+      </div>
     </div>
   );
 };

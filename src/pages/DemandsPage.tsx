@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { ListChecks, Filter, PlusCircle, LayoutGrid, List, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DemandsFilterPanel from '@/components/demands/DemandsFilterPanel';
-import DemandCard from '@/components/demands/DemandCard'; // Importando o card renomeado
+import DemandCard from '@/components/demands/DemandCard';
 import CreateDemandDialog from '@/components/demands/CreateDemandDialog';
 import useSiteConfig from '@/hooks/use-site-config';
-import useDemands, { DemandDetail } from '@/hooks/use-demands'; // Importando useDemands para a lista simples
-import DemandsByBlockViewer from '@/components/demands/DemandsByBlockViewer'; // Importando o novo viewer
+import useDemands, { DemandDetail } from '@/hooks/use-demands';
+import DemandsByBlockViewer from '@/components/demands/DemandsByBlockViewer';
+import { Badge } from '@/components/ui/badge';
 
 const SimpleDemandsList: React.FC<{ filters: any }> = ({ filters }) => {
   const { data: demands, isLoading, error } = useDemands(filters);
@@ -32,10 +33,16 @@ const SimpleDemandsList: React.FC<{ filters: any }> = ({ filters }) => {
   }
   
   return (
-    <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {demands.map(demand => (
-        <DemandCard key={demand.id} demand={demand} />
-      ))}
+    <div className="space-y-4">
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Badge variant="outline" className="mr-2">{demands.length}</Badge>
+        demandas encontradas
+      </div>
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {demands.map(demand => (
+          <DemandCard key={demand.id} demand={demand} />
+        ))}
+      </div>
     </div>
   );
 };
@@ -44,7 +51,7 @@ const SimpleDemandsList: React.FC<{ filters: any }> = ({ filters }) => {
 const DemandsPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isGroupedView, setIsGroupedView] = useState(false); // Novo estado para visualização agrupada
+  const [isGroupedView, setIsGroupedView] = useState(false);
   const [filters, setFilters] = useState({});
   const { data: siteConfig } = useSiteConfig();
   
@@ -63,7 +70,6 @@ const DemandsPage: React.FC = () => {
         </h1>
         <div className="flex space-x-4 flex-shrink-0">
           
-          {/* Botão de Alternância de Visualização */}
           <Button 
             variant="outline" 
             onClick={() => setIsGroupedView(!isGroupedView)}

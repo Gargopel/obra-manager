@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, User, Briefcase, Star, Zap, CheckCircle, TrendingUp, Filter, SortAsc, SortDesc, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { Loader2, User, Briefcase, Star, Zap, CheckCircle, TrendingUp, Filter, SortAsc, SortDesc, Trash2 } from 'lucide-react';
 import useEmployees, { EmployeeWithStats } from '@/hooks/use-employees';
 import useConfigData from '@/hooks/use-config-data';
 import { RATING_CRITERIA } from '@/utils/construction-structure';
@@ -19,7 +19,7 @@ interface EmployeesListProps {
     service_type_id?: string;
     name_search?: string;
   };
-  onViewDetails: (employee: EmployeeWithStats) => void; // Nova prop
+  onViewDetails: (employee: EmployeeWithStats) => void;
 }
 
 type SortCriterion = typeof RATING_CRITERIA[number] | 'totalScore' | 'name';
@@ -55,7 +55,6 @@ const EmployeeCard: React.FC<{ employee: EmployeeWithStats, onViewDetails: (empl
     
   const deleteEmployeeMutation = useMutation({
     mutationFn: async (id: string) => {
-      // A exclusão do funcionário deve ser em cascata para as atribuições (RLS deve permitir)
       const { error } = await supabase
         .from('employees')
         .delete()
@@ -68,12 +67,12 @@ const EmployeeCard: React.FC<{ employee: EmployeeWithStats, onViewDetails: (empl
       queryClient.invalidateQueries({ queryKey: ['employeesWithStats'] });
     },
     onError: (error) => {
-      showError('Erro ao excluir funcionário. Verifique se há restrições de chave estrangeira.');
+      showError('Erro ao excluir funcionário.');
     },
   });
   
   const handleDelete = () => {
-    if (window.confirm(`Tem certeza que deseja excluir o funcionário ${employee.name} e todas as suas atribuições?`)) {
+    if (window.confirm(`Tem certeza que deseja excluir o funcionário ${employee.name}?`)) {
       deleteEmployeeMutation.mutate(employee.id);
     }
   };
@@ -96,14 +95,12 @@ const EmployeeCard: React.FC<{ employee: EmployeeWithStats, onViewDetails: (empl
       </CardHeader>
       <CardContent className="space-y-4">
         
-        {/* Estatísticas de Atribuição */}
         <div className="space-y-1 text-sm">
           <p className="font-medium">Atribuições: {employee.completedAssignments} / {employee.totalAssignments}</p>
           <Progress value={completionPercentage} className="h-2" />
           <p className="text-xs text-muted-foreground">{completionPercentage}% Concluído</p>
         </div>
         
-        {/* Avaliações Médias */}
         <div className="grid grid-cols-2 gap-3 border-t pt-3 border-border/50">
           <div className="col-span-2 text-sm font-semibold flex items-center">
             <Star className="w-4 h-4 mr-1 text-yellow-500" />
@@ -126,31 +123,17 @@ const EmployeeCard: React.FC<{ employee: EmployeeWithStats, onViewDetails: (empl
         </div>
         
         <div className="flex space-x-2 pt-2">
-          <Button 
-            onClick={() => onViewDetails(employee)} 
-            className="flex-1"
-            variant="outline"
-          >
+          <Button onClick={() => onViewDetails(employee)} className="flex-1" variant="outline">
             <Briefcase className="w-4 h-4 mr-2" />
-            Ver Atribuições
+            Atribuições
           </Button>
           
           {isAdmin && (
-            <Button 
-              onClick={handleDelete}
-              disabled={deleteEmployeeMutation.isPending}
-              variant="destructive"
-              size="icon"
-            >
-              {deleteEmployeeMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Trash2 className="w-4 h-4" />
-              )}
+            <Button onClick={handleDelete} disabled={deleteEmployeeMutation.isPending} variant="destructive" size="icon">
+              {deleteEmployeeMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
             </Button>
           )}
         </div>
-        
       </CardContent>
     </Card>
   );
@@ -165,112 +148,51 @@ const EmployeesList: React.FC<EmployeesListProps> = ({ filters, onViewDetails })
 
   const sortedEmployees = useMemo(() => {
     if (!employees) return [];
-
     const employeesWithTotalScore = employees.map(emp => {
       const ratings = RATING_CRITERIA.map(c => emp.averageRatings[c]).filter(r => r !== null) as number[];
       const totalScore = ratings.length > 0 ? parseFloat((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)) : null;
       return { ...emp, totalScore };
     });
-
     return employeesWithTotalScore.sort((a, b) => {
       if (sortBy === 'name') {
         const comparison = a.name.localeCompare(b.name);
         return sortDirection === 'asc' ? comparison : -comparison;
       }
-      
       const aValue = sortBy === 'totalScore' ? a.totalScore : a.averageRatings[sortBy];
       const bValue = sortBy === 'totalScore' ? b.totalScore : b.averageRatings[sortBy];
-
-      // Handle nulls: nulls go to the end in both ASC and DESC
       if (aValue === null && bValue === null) return 0;
       if (aValue === null) return 1;
       if (bValue === null) return -1;
-
-      if (sortDirection === 'asc') {
-        return aValue - bValue;
-      } else {
-        return bValue - aValue;
-      }
+      return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
     });
   }, [employees, sortBy, sortDirection]);
   
-  const currentServiceFilterName = useMemo(() => {
-    if (!filters.service_type_id || !configData) return null;
-    return configData.serviceTypes.find(s => s.id === filters.service_type_id)?.name;
-  }, [filters.service_type_id, configData]);
-
-  if (isLoading || isLoadingConfig) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (isLoading || isLoadingConfig) return <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   
-  if (error) {
-    return <div className="text-red-500">Erro ao carregar funcionários: {error.message}</div>;
-  }
-  
-  if (!employees || employees.length === 0) {
-    return (
-      <div className="text-center p-10 border border-dashed rounded-lg text-muted-foreground backdrop-blur-sm bg-white/50 dark:bg-gray-800/50">
-        Nenhum funcionário encontrado.
-      </div>
-    );
-  }
-  
-  const handleSortChange = (value: SortCriterion) => {
-    if (value === sortBy) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(value);
-      setSortDirection('desc'); // Default to descending for scores
-    }
-  };
-
   return (
     <div className="space-y-6">
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Badge variant="outline" className="mr-2">{employees?.length || 0}</Badge>
+        funcionários encontrados
+      </div>
       
-      {/* Barra de Ordenação */}
-      <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50 p-4">
+      <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 p-4">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="text-sm font-medium flex items-center">
-            <Filter className="w-4 h-4 mr-2" />
-            {currentServiceFilterName ? `Melhores em: ${currentServiceFilterName}` : 'Ordenar por:'}
-          </div>
-          
-          <Select 
-            value={sortBy} 
-            onValueChange={(val) => handleSortChange(val as SortCriterion)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Critério de Ordenação" />
-            </SelectTrigger>
+          <div className="text-sm font-medium">Ordenar por:</div>
+          <Select value={sortBy} onValueChange={(val) => setSortBy(val as SortCriterion)}>
+            <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="totalScore">{RATING_LABELS.totalScore}</SelectItem>
-              <SelectItem value="name">{RATING_LABELS.name}</SelectItem>
-              <SelectItem value="speed">{RATING_LABELS.speed}</SelectItem>
-              <SelectItem value="quality">{RATING_LABELS.quality}</SelectItem>
-              <SelectItem value="cleanliness">{RATING_LABELS.cleanliness}</SelectItem>
-              <SelectItem value="organization">{RATING_LABELS.organization}</SelectItem>
+              {Object.entries(RATING_LABELS).map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
             </SelectContent>
           </Select>
-          
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-          >
+          <Button variant="outline" size="icon" onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}>
             {sortDirection === 'asc' ? <SortAsc className="w-4 h-4" /> : <SortDesc className="w-4 h-4" />}
           </Button>
         </div>
       </Card>
       
-      {/* Lista de Funcionários */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {sortedEmployees.map(employee => (
-          <EmployeeCard key={employee.id} employee={employee} onViewDetails={onViewDetails} />
-        ))}
+        {sortedEmployees.map(employee => <EmployeeCard key={employee.id} employee={employee} onViewDetails={onViewDetails} />)}
       </div>
     </div>
   );

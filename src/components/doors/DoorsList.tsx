@@ -76,7 +76,7 @@ export const DoorCard: React.FC<{ door: DoorDetail }> = ({ door }) => {
   const locationText = `Apto ${door.apartment_number} (${door.floor_number}º Andar)`;
 
   return (
-    <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 transition-all hover:shadow-2xl">
+    <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 transition-all duration-300 hover:shadow-2xl">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-xl flex items-center"><MapPin className="w-5 h-5 mr-2 text-primary" />Bloco {door.block_id}</CardTitle>
@@ -117,9 +117,16 @@ const DoorsList: React.FC<DoorsListProps> = ({ filters }) => {
   const { data: doors, isLoading, error } = useDoors(filters);
   if (isLoading) return <div className="flex justify-center p-10"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   if (!doors || doors.length === 0) return <div className="text-center p-10 border border-dashed rounded-lg text-muted-foreground">Nenhuma porta encontrada.</div>;
+  
   return (
-    <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {doors.map(d => <DoorCard key={d.id} door={d} />)}
+    <div className="space-y-4">
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Badge variant="outline" className="mr-2">{doors.length}</Badge>
+        registros de portas encontrados
+      </div>
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {doors.map(d => <DoorCard key={d.id} door={d} />)}
+      </div>
     </div>
   );
 };

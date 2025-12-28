@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useSession } from '@/contexts/SessionContext'; // Importando useSession
+import { useSession } from '@/contexts/SessionContext';
 
 interface OpeningsListProps {
   filters: any;
@@ -212,10 +212,16 @@ const OpeningsList: React.FC<OpeningsListProps> = ({ filters }) => {
   }
   
   return (
-    <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-      {openings.map(opening => (
-        <OpeningCard key={opening.id} opening={opening} />
-      ))}
+    <div className="space-y-4">
+      <div className="flex items-center text-sm text-muted-foreground">
+        <Badge variant="outline" className="mr-2">{openings.length}</Badge>
+        registros de abertura encontrados
+      </div>
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        {openings.map(opening => (
+          <OpeningCard key={opening.id} opening={opening} />
+        ))}
+      </div>
     </div>
   );
 };
