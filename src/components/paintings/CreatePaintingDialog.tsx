@@ -76,16 +76,6 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
               coat: coat,
             });
           });
-        } else if (!isApartmentRequired && !isFloorBased) {
-          payloads.push({
-            user_id: user.id,
-            block_id: block,
-            apartment_number: null,
-            painter_id: painterId,
-            location: location,
-            status: 'Em Andamento',
-            coat: coat,
-          });
         }
       });
 
@@ -109,18 +99,18 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
 
   return (
     <Dialog open={open} onOpenChange={(val) => { if(!val) resetForm(); onOpenChange(val); }}>
-      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/90 dark:bg-gray-900/90 shadow-2xl border border-white/20 flex flex-col max-h-[90vh]">
+      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-2xl border border-white/20 flex flex-col max-h-[90vh]">
         <DialogHeader><DialogTitle>Registrar Pintura (Lote)</DialogTitle></DialogHeader>
         
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-6 py-4">
             {/* Blocos */}
             <div className="space-y-2">
-              <Label>Blocos *</Label>
-              <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
+              <Label className="font-bold text-primary">Blocos *</Label>
+              <div className="p-3 border rounded-lg bg-background/50">
                 <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedBlocks} onValueChange={setSelectedBlocks}>
                   {BLOCKS.map(b => (
-                    <ToggleGroupItem key={b} value={b} className="w-10 h-10">{b}</ToggleGroupItem>
+                    <ToggleGroupItem key={b} value={b} className="w-10 h-10 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{b}</ToggleGroupItem>
                   ))}
                 </ToggleGroup>
               </div>
@@ -129,14 +119,14 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
             {/* Configuração */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Local da Pintura</Label>
+                <Label className="font-bold">Local da Pintura</Label>
                 <Select value={location} onValueChange={(val) => { setLocation(val); setSelectedApartments([]); setSelectedFloors([]); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{PAINTING_LOCATIONS.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Demão</Label>
+                <Label className="font-bold">Demão</Label>
                 <Select value={coat} onValueChange={setCoat}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{PAINTING_COATS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
@@ -146,32 +136,36 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
 
             {/* Pintor */}
             <div className="space-y-2">
-              <Label>Pintor Responsável</Label>
+              <Label className="font-bold">Pintor Responsável</Label>
               <Select value={painterId} onValueChange={setPainterId} disabled={isLoadingConfig}>
                 <SelectTrigger><SelectValue placeholder="Selecione o Pintor" /></SelectTrigger>
                 <SelectContent>{configData?.painters.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
 
-            {/* Apartamentos - COM ROLAGEM CORRIGIDA */}
+            {/* Apartamentos - Removida a rolagem interna fixa */}
             {isApartmentRequired && (
               <div className="space-y-2">
-                <Label>Apartamentos *</Label>
-                <div className="p-2 border rounded-md bg-background/50 max-h-48 overflow-y-auto">
+                <Label className="font-bold text-primary">Apartamentos *</Label>
+                <div className="p-3 border rounded-lg bg-background/50">
                   <ToggleGroup type="multiple" variant="outline" className="grid grid-cols-4 gap-2" value={selectedApartments} onValueChange={setSelectedApartments}>
-                    {APARTMENT_NUMBERS.map(a => <ToggleGroupItem key={a} value={a} className="text-xs h-8">{a}</ToggleGroupItem>)}
+                    {APARTMENT_NUMBERS.map(a => (
+                      <ToggleGroupItem key={a} value={a} className="text-xs h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{a}</ToggleGroupItem>
+                    ))}
                   </ToggleGroup>
                 </div>
               </div>
             )}
 
-            {/* Andares - COM ROLAGEM CORRIGIDA */}
+            {/* Andares */}
             {isFloorBased && (
               <div className="space-y-2">
-                <Label>Andares *</Label>
-                <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
+                <Label className="font-bold text-primary">Andares *</Label>
+                <div className="p-3 border rounded-lg bg-background/50">
                   <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedFloors} onValueChange={setSelectedFloors}>
-                    {[1, 2, 3, 4, 5].map(f => <ToggleGroupItem key={f} value={f.toString()} className="w-12 h-10">{f}º</ToggleGroupItem>)}
+                    {[1, 2, 3, 4, 5].map(f => (
+                      <ToggleGroupItem key={f} value={f.toString()} className="w-12 h-10 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{f}º</ToggleGroupItem>
+                    ))}
                   </ToggleGroup>
                 </div>
               </div>
