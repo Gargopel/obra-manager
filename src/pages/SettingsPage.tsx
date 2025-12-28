@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Settings, Users, Wrench, Home, Lock, User, Building, Globe, BrickWall, PaintBucket, DoorOpen, DoorClosed } from 'lucide-react';
+import { Settings, Users, Wrench, Home, Lock, User, Building, Globe, BrickWall, PaintBucket, DoorOpen, DoorClosed, HardHat } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +13,7 @@ import ManageCeramicLots from '@/components/settings/ManageCeramicLots';
 import ManagePainters from '@/components/settings/ManagePainters';
 import ManageOpeningTypes from '@/components/settings/ManageOpeningTypes';
 import ManageDoorTypes from '@/components/settings/ManageDoorTypes';
+import ManageContractors from '@/components/settings/ManageContractors';
 import useSiteConfig from '@/hooks/use-site-config';
 
 const SettingsPage: React.FC = () => {
@@ -21,7 +22,6 @@ const SettingsPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Extrair parâmetro 'tab' da URL
   const urlParams = new URLSearchParams(location.search);
   const initialTab = urlParams.get('tab') || 'profile';
   
@@ -31,7 +31,7 @@ const SettingsPage: React.FC = () => {
     }
   }, [siteConfig]);
   
-  if (isLoading) return null; // Wait for session loading
+  if (isLoading) return null;
   
   if (!isAdmin) {
     return (
@@ -52,66 +52,31 @@ const SettingsPage: React.FC = () => {
       </h1>
       
       <Tabs defaultValue={initialTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-10 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
-          <TabsTrigger value="profile" className="flex items-center"><User className="w-4 h-4 mr-2" /> Perfil</TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center"><Users className="w-4 h-4 mr-2" /> Usuários</TabsTrigger>
-          <TabsTrigger value="blocks" className="flex items-center"><Building className="w-4 h-4 mr-2" /> Blocos</TabsTrigger>
-          <TabsTrigger value="services" className="flex items-center"><Wrench className="w-4 h-4 mr-2" /> Serviços</TabsTrigger>
-          <TabsTrigger value="rooms" className="flex items-center"><Home className="w-4 h-4 mr-2" /> Cômodos</TabsTrigger>
-          <TabsTrigger value="painters" className="flex items-center"><PaintBucket className="w-4 h-4 mr-2" /> Pintores</TabsTrigger>
-          <TabsTrigger value="ceramic-lots" className="flex items-center"><BrickWall className="w-4 h-4 mr-2" /> Lotes Cerâmica</TabsTrigger>
-          <TabsTrigger value="opening-types" className="flex items-center"><DoorOpen className="w-4 h-4 mr-2" /> Tipos Aberturas</TabsTrigger>
-          <TabsTrigger value="door-types" className="flex items-center"><DoorClosed className="w-4 h-4 mr-2" /> Tipos Portas</TabsTrigger>
-          <TabsTrigger value="site" className="flex items-center"><Globe className="w-4 h-4 mr-2" /> Site</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-11 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
+          <TabsTrigger value="profile"><User className="w-4 h-4 mr-2" /> Perfil</TabsTrigger>
+          <TabsTrigger value="users"><Users className="w-4 h-4 mr-2" /> Usuários</TabsTrigger>
+          <TabsTrigger value="blocks"><Building className="w-4 h-4 mr-2" /> Blocos</TabsTrigger>
+          <TabsTrigger value="services"><Wrench className="w-4 h-4 mr-2" /> Serviços</TabsTrigger>
+          <TabsTrigger value="rooms"><Home className="w-4 h-4 mr-2" /> Cômodos</TabsTrigger>
+          <TabsTrigger value="painters"><PaintBucket className="w-4 h-4 mr-2" /> Pintores</TabsTrigger>
+          <TabsTrigger value="contractors"><HardHat className="w-4 h-4 mr-2" /> Empreit.</TabsTrigger>
+          <TabsTrigger value="ceramic-lots"><BrickWall className="w-4 h-4 mr-2" /> Cerâm.</TabsTrigger>
+          <TabsTrigger value="opening-types"><DoorOpen className="w-4 h-4 mr-2" /> Abert.</TabsTrigger>
+          <TabsTrigger value="door-types"><DoorClosed className="w-4 h-4 mr-2" /> Portas</TabsTrigger>
+          <TabsTrigger value="site"><Globe className="w-4 h-4 mr-2" /> Site</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="profile" className="mt-6">
-          <UserProfile />
-        </TabsContent>
-        
-        <TabsContent value="users" className="mt-6">
-          <ManageUsers />
-        </TabsContent>
-        
-        <TabsContent value="blocks" className="mt-6">
-          <ManageBlocks />
-        </TabsContent>
-        
-        <TabsContent value="services" className="mt-6">
-          <ManageConfig 
-            configType="service_types" 
-            title="Gerenciar Tipos de Serviço" 
-            icon={Wrench} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="rooms" className="mt-6">
-          <ManageConfig 
-            configType="rooms" 
-            title="Gerenciar Cômodos" 
-            icon={Home} 
-          />
-        </TabsContent>
-        
-        <TabsContent value="painters" className="mt-6">
-          <ManagePainters />
-        </TabsContent>
-        
-        <TabsContent value="ceramic-lots" className="mt-6">
-          <ManageCeramicLots />
-        </TabsContent>
-        
-        <TabsContent value="opening-types" className="mt-6">
-          <ManageOpeningTypes />
-        </TabsContent>
-        
-        <TabsContent value="door-types" className="mt-6">
-          <ManageDoorTypes />
-        </TabsContent>
-        
-        <TabsContent value="site" className="mt-6">
-          <ManageSiteConfig />
-        </TabsContent>
+        <TabsContent value="profile" className="mt-6"><UserProfile /></TabsContent>
+        <TabsContent value="users" className="mt-6"><ManageUsers /></TabsContent>
+        <TabsContent value="blocks" className="mt-6"><ManageBlocks /></TabsContent>
+        <TabsContent value="services" className="mt-6"><ManageConfig configType="service_types" title="Gerenciar Tipos de Serviço" icon={Wrench} /></TabsContent>
+        <TabsContent value="rooms" className="mt-6"><ManageConfig configType="rooms" title="Gerenciar Cômodos" icon={Home} /></TabsContent>
+        <TabsContent value="painters" className="mt-6"><ManagePainters /></TabsContent>
+        <TabsContent value="contractors" className="mt-6"><ManageContractors /></TabsContent>
+        <TabsContent value="ceramic-lots" className="mt-6"><ManageCeramicLots /></TabsContent>
+        <TabsContent value="opening-types" className="mt-6"><ManageOpeningTypes /></TabsContent>
+        <TabsContent value="door-types" className="mt-6"><ManageDoorTypes /></TabsContent>
+        <TabsContent value="site" className="mt-6"><ManageSiteConfig /></TabsContent>
       </Tabs>
     </div>
   );
