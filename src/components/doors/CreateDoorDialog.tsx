@@ -37,7 +37,7 @@ const CreateDoorDialog: React.FC<CreateDoorDialogProps> = ({ open, onOpenChange 
     mutationFn: async () => {
       if (!user) throw new Error('Usuário não autenticado.');
       if (selectedBlocks.length === 0 || selectedApartments.length === 0 || !doorTypeId) {
-        throw new Error('Preencha todos os campos obrigatórios.');
+        throw new Error('Preencha os campos obrigatórios.');
       }
       
       const payloads: any[] = [];
@@ -71,14 +71,14 @@ const CreateDoorDialog: React.FC<CreateDoorDialogProps> = ({ open, onOpenChange 
 
   return (
     <Dialog open={open} onOpenChange={(val) => { if(!val) resetForm(); onOpenChange(val); }}>
-      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-2xl border border-white/20 flex flex-col max-h-[90vh]">
+      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/90 dark:bg-gray-900/90 shadow-2xl border border-white/20 flex flex-col max-h-[90vh]">
         <DialogHeader><DialogTitle>Registrar Portas (Lote)</DialogTitle></DialogHeader>
         
         <ScrollArea className="flex-1 pr-4">
           <div className="space-y-6 py-4">
             <div className="space-y-2">
               <Label className="font-bold text-primary">Blocos *</Label>
-              <div className="p-3 border rounded-lg bg-background/50">
+              <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto text-center">
                 <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedBlocks} onValueChange={setSelectedBlocks}>
                   {BLOCKS.map(b => <ToggleGroupItem key={b} value={b} className="w-10 h-10 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{b}</ToggleGroupItem>)}
                 </ToggleGroup>
@@ -95,9 +95,13 @@ const CreateDoorDialog: React.FC<CreateDoorDialogProps> = ({ open, onOpenChange 
 
             <div className="space-y-2">
               <Label className="font-bold text-primary">Apartamentos *</Label>
-              <div className="p-3 border rounded-lg bg-background/50">
+              <div className="p-3 border rounded-lg bg-background/50 max-h-64 overflow-y-auto">
                 <ToggleGroup type="multiple" variant="outline" className="grid grid-cols-4 gap-2" value={selectedApartments} onValueChange={setSelectedApartments}>
-                  {APARTMENT_NUMBERS.map(a => <ToggleGroupItem key={a} value={a} className="text-xs h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{a}</ToggleGroupItem>)}
+                  {APARTMENT_NUMBERS.map(a => (
+                    <ToggleGroupItem key={a} value={a} className="text-xs h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                      {a}
+                    </ToggleGroupItem>
+                  ))}
                 </ToggleGroup>
               </div>
             </div>
@@ -105,8 +109,8 @@ const CreateDoorDialog: React.FC<CreateDoorDialogProps> = ({ open, onOpenChange 
         </ScrollArea>
         
         <DialogFooter className="pt-4 border-t">
-          <Button onClick={() => createDoorMutation.mutate()} disabled={createDoorMutation.isPending || !isFormValid} className="w-full">
-            {createDoorMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+          <Button onClick={() => createDoorMutation.mutate()} disabled={createDoorMutation.isPending || !isFormValid} className="w-full text-lg">
+            {createDoorMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
             Registrar {selectedBlocks.length * selectedApartments.length} Portas
           </Button>
         </DialogFooter>

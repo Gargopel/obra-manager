@@ -46,7 +46,7 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
     mutationFn: async () => {
       if (!user) throw new Error('Usuário não autenticado.');
       if (selectedBlocks.length === 0 || !painterId || !coat) {
-        throw new Error('Preencha os campos obrigatórios (Blocos, Pintor e Demão).');
+        throw new Error('Preencha os campos obrigatórios.');
       }
       
       const payloads: any[] = [];
@@ -85,7 +85,7 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
       if (insertError) throw insertError;
     },
     onSuccess: () => {
-      showSuccess('Serviços de pintura registrados com sucesso!');
+      showSuccess('Serviços de pintura registrados!');
       resetForm();
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: ['paintings'] });
@@ -107,7 +107,7 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
             {/* Blocos */}
             <div className="space-y-2">
               <Label className="font-bold text-primary">Blocos *</Label>
-              <div className="p-3 border rounded-lg bg-background/50">
+              <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
                 <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedBlocks} onValueChange={setSelectedBlocks}>
                   {BLOCKS.map(b => (
                     <ToggleGroupItem key={b} value={b} className="w-10 h-10 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{b}</ToggleGroupItem>
@@ -143,14 +143,16 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
               </Select>
             </div>
 
-            {/* Apartamentos - Removida a rolagem interna fixa */}
+            {/* Apartamentos - ROLAGEM CORRIGIDA COM GRID */}
             {isApartmentRequired && (
               <div className="space-y-2">
                 <Label className="font-bold text-primary">Apartamentos *</Label>
-                <div className="p-3 border rounded-lg bg-background/50">
+                <div className="p-3 border rounded-lg bg-background/50 max-h-64 overflow-y-auto">
                   <ToggleGroup type="multiple" variant="outline" className="grid grid-cols-4 gap-2" value={selectedApartments} onValueChange={setSelectedApartments}>
                     {APARTMENT_NUMBERS.map(a => (
-                      <ToggleGroupItem key={a} value={a} className="text-xs h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{a}</ToggleGroupItem>
+                      <ToggleGroupItem key={a} value={a} className="text-xs h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                        {a}
+                      </ToggleGroupItem>
                     ))}
                   </ToggleGroup>
                 </div>
@@ -161,7 +163,7 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
             {isFloorBased && (
               <div className="space-y-2">
                 <Label className="font-bold text-primary">Andares *</Label>
-                <div className="p-3 border rounded-lg bg-background/50">
+                <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
                   <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedFloors} onValueChange={setSelectedFloors}>
                     {[1, 2, 3, 4, 5].map(f => (
                       <ToggleGroupItem key={f} value={f.toString()} className="w-12 h-10 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{f}º</ToggleGroupItem>
@@ -174,8 +176,8 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
         </ScrollArea>
         
         <DialogFooter className="pt-4 border-t">
-          <Button onClick={() => createPaintingMutation.mutate()} disabled={createPaintingMutation.isPending || !isFormValid} className="w-full">
-            {createPaintingMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+          <Button onClick={() => createPaintingMutation.mutate()} disabled={createPaintingMutation.isPending || !isFormValid} className="w-full text-lg">
+            {createPaintingMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
             Registrar {selectedBlocks.length * (isApartmentRequired ? selectedApartments.length : isFloorBased ? selectedFloors.length : 1)} Registros
           </Button>
         </DialogFooter>
