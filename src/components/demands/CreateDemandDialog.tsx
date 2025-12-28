@@ -109,7 +109,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
             apartment_number: apt,
             service_type_id: serviceTypeId,
             room_id: roomId,
-            description: description.trim() || null,
+            description: description.trim() || null, // Se estiver vazio, envia como nulo
             image_url: imageUrl,
             status: 'Pendente',
           });
