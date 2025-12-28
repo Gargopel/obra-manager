@@ -99,58 +99,58 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
 
   return (
     <Dialog open={open} onOpenChange={(val) => { if(!val) resetForm(); onOpenChange(val); }}>
-      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-2xl border border-white/20 flex flex-col max-h-[90vh]">
-        <DialogHeader><DialogTitle>Registrar Pintura (Lote)</DialogTitle></DialogHeader>
+      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-2xl border border-white/20 flex flex-col max-h-[90vh] p-4 md:p-6">
+        <DialogHeader className="pb-2"><DialogTitle>Registrar Pintura (Lote)</DialogTitle></DialogHeader>
         
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6 py-4">
+        <ScrollArea className="flex-1 pr-2">
+          <div className="space-y-4 py-2">
             {/* Blocos */}
-            <div className="space-y-2">
-              <Label className="font-bold text-primary">Blocos *</Label>
-              <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
-                <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedBlocks} onValueChange={setSelectedBlocks}>
+            <div className="space-y-1.5">
+              <Label className="text-sm font-bold text-primary">Blocos *</Label>
+              <div className="p-2 border rounded-md bg-background/50 max-h-24 overflow-y-auto">
+                <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-1.5" value={selectedBlocks} onValueChange={setSelectedBlocks}>
                   {BLOCKS.map(b => (
-                    <ToggleGroupItem key={b} value={b} className="w-10 h-10 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{b}</ToggleGroupItem>
+                    <ToggleGroupItem key={b} value={b} className="w-8 h-8 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{b}</ToggleGroupItem>
                   ))}
                 </ToggleGroup>
               </div>
             </div>
 
             {/* Configuração */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="font-bold">Local da Pintura</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-bold">Local da Pintura</Label>
                 <Select value={location} onValueChange={(val) => { setLocation(val); setSelectedApartments([]); setSelectedFloors([]); }}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{PAINTING_LOCATIONS.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}</SelectContent>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{PAINTING_LOCATIONS.map(loc => <SelectItem key={loc} value={loc} className="text-xs">{loc}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label className="font-bold">Demão</Label>
+              <div className="space-y-1">
+                <Label className="text-xs font-bold">Demão</Label>
                 <Select value={coat} onValueChange={setCoat}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{PAINTING_COATS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{PAINTING_COATS.map(c => <SelectItem key={c} value={c} className="text-xs">{c}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
 
             {/* Pintor */}
-            <div className="space-y-2">
-              <Label className="font-bold">Pintor Responsável</Label>
+            <div className="space-y-1">
+              <Label className="text-xs font-bold">Pintor Responsável</Label>
               <Select value={painterId} onValueChange={setPainterId} disabled={isLoadingConfig}>
-                <SelectTrigger><SelectValue placeholder="Selecione o Pintor" /></SelectTrigger>
-                <SelectContent>{configData?.painters.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Selecione o Pintor" /></SelectTrigger>
+                <SelectContent>{configData?.painters.map(p => <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>)}</SelectContent>
               </Select>
             </div>
 
-            {/* Apartamentos - ROLAGEM CORRIGIDA COM GRID */}
+            {/* Apartamentos */}
             {isApartmentRequired && (
-              <div className="space-y-2">
-                <Label className="font-bold text-primary">Apartamentos *</Label>
-                <div className="p-3 border rounded-lg bg-background/50 max-h-64 overflow-y-auto">
-                  <ToggleGroup type="multiple" variant="outline" className="grid grid-cols-4 gap-2" value={selectedApartments} onValueChange={setSelectedApartments}>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-bold text-primary">Apartamentos *</Label>
+                <div className="p-2 border rounded-lg bg-background/50 max-h-72 overflow-y-auto">
+                  <ToggleGroup type="multiple" variant="outline" className="grid grid-cols-4 gap-1.5" value={selectedApartments} onValueChange={setSelectedApartments}>
                     {APARTMENT_NUMBERS.map(a => (
-                      <ToggleGroupItem key={a} value={a} className="text-xs h-8 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                      <ToggleGroupItem key={a} value={a} className="text-[10px] h-7 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
                         {a}
                       </ToggleGroupItem>
                     ))}
@@ -161,12 +161,12 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
 
             {/* Andares */}
             {isFloorBased && (
-              <div className="space-y-2">
-                <Label className="font-bold text-primary">Andares *</Label>
-                <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
-                  <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-2" value={selectedFloors} onValueChange={setSelectedFloors}>
+              <div className="space-y-1.5">
+                <Label className="text-sm font-bold text-primary">Andares *</Label>
+                <div className="p-2 border rounded-md bg-background/50">
+                  <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-1.5" value={selectedFloors} onValueChange={setSelectedFloors}>
                     {[1, 2, 3, 4, 5].map(f => (
-                      <ToggleGroupItem key={f} value={f.toString()} className="w-12 h-10 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{f}º</ToggleGroupItem>
+                      <ToggleGroupItem key={f} value={f.toString()} className="w-10 h-8 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{f}º</ToggleGroupItem>
                     ))}
                   </ToggleGroup>
                 </div>
@@ -175,8 +175,8 @@ const CreatePaintingDialog: React.FC<CreatePaintingDialogProps> = ({ open, onOpe
           </div>
         </ScrollArea>
         
-        <DialogFooter className="pt-4 border-t">
-          <Button onClick={() => createPaintingMutation.mutate()} disabled={createPaintingMutation.isPending || !isFormValid} className="w-full text-lg">
+        <DialogFooter className="pt-3 border-t mt-2">
+          <Button onClick={() => createPaintingMutation.mutate()} disabled={createPaintingMutation.isPending || !isFormValid} className="w-full h-11 text-base">
             {createPaintingMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
             Registrar {selectedBlocks.length * (isApartmentRequired ? selectedApartments.length : isFloorBased ? selectedFloors.length : 1)} Registros
           </Button>
