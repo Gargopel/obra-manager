@@ -27,47 +27,66 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data as Profile;
+    } catch (err) {
+      console.error('Erro ao carregar perfil:', err);
+      return null;
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
 
-    // Função para buscar o perfil de forma segura
-    const fetchProfile = async (userId: string) => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle();
-        
-        if (error) throw error;
-        if (mounted) setProfile(data as Profile);
-      } catch (err) {
-        console.error('Erro ao carregar perfil:', err);
-        if (mounted) setProfile(null);
-      }
-    };
-
-    // O onAuthStateChange cuida do estado inicial (INITIAL_SESSION) 
-    // e de todas as mudanças subsequentes.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+    // Inicialização definitiva
+    const initialize = async () => {
+      // 1. Pega a sessão atual (síncrona do localStorage ou refresh rápido)
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
+      
       if (!mounted) return;
 
-      console.log(`Auth Event: ${event}`);
-      setSession(currentSession);
-      
-      if (currentSession) {
-        await fetchProfile(currentSession.user.id);
-      } else {
-        setProfile(null);
+      if (initialSession) {
+        setSession(initialSession);
+        const userProfile = await fetchProfile(initialSession.user.id);
+        if (mounted) setProfile(userProfile);
       }
 
-      // Só paramos o loading após processar o evento inicial
+      // 2. Só agora liberamos o App para renderizar
       setIsLoading(false);
-    });
+
+      // 3. Configuramos o listener para mudanças futuras (expiração de token, logout em outra aba)
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+        if (!mounted) return;
+
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setProfile(null);
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          setSession(currentSession);
+          if (currentSession) {
+            const p = await fetchProfile(currentSession.user.id);
+            if (mounted) setProfile(p);
+          }
+        }
+      });
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    };
+
+    initialize();
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 

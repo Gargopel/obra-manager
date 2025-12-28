@@ -8,7 +8,6 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Layout from "./components/Layout";
 import { Loader2 } from "lucide-react";
 
-// Importações diretas para evitar problemas de carregamento em redes instáveis
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import DemandsPage from "./pages/DemandsPage";
@@ -35,6 +34,7 @@ const queryClient = new QueryClient({
 const AppRoutes = () => {
   const { isLoading, session } = useSession();
 
+  // Bloqueio total enquanto decide o estado
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -45,13 +45,13 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Rota pública: Login */}
+      {/* Rota de Login: se estiver logado, foge para a home */}
       <Route 
         path="/login" 
         element={session ? <Navigate to="/" replace /> : <Login />} 
       />
       
-      {/* Rotas Protegidas dentro do Layout */}
+      {/* Rotas Privadas: se não estiver logado, vai para o login */}
       <Route element={session ? <Layout /> : <Navigate to="/login" replace />}>
         <Route path="/" element={<Index />} />
         <Route path="/demands" element={<DemandsPage />} />
@@ -65,7 +65,6 @@ const AppRoutes = () => {
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
 
-      {/* Fallback para 404 */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
