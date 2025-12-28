@@ -4,17 +4,25 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig(() => ({
-  base: './', // Adicionado para garantir caminhos relativos na produção (necessário para cPanel/subdiretórios)
+  base: "/", // Essencial para SPAs em produção
   server: {
     host: "::",
     port: 8080,
-    // Adicionando fallback para index.html para rotas do React Router
-    historyApiFallback: true,
   },
   plugins: [dyadComponentTagger(), react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom', '@supabase/supabase-js'],
+        },
+      },
     },
   },
 }));

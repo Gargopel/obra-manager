@@ -2,24 +2,69 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import { SessionProvider } from "./contexts/SessionContext";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { SessionProvider, useSession } from "./contexts/SessionContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Layout from "./components/Layout";
+import { Loader2 } from "lucide-react";
+
+// Lazy loading das páginas para performance e resiliência
+import Index from "./pages/Index";
+import Login from "./pages/Login";
 import DemandsPage from "./pages/DemandsPage";
-import SettingsPage from "./pages/SettingsPage";
-import ProfilePage from "./pages/ProfilePage";
+import MeasurementsPage from "./pages/MeasurementsPage";
 import CeramicsPage from "./pages/CeramicsPage";
 import PaintingsPage from "./pages/PaintingsPage";
 import OpeningsPage from "./pages/OpeningsPage";
 import DoorsPage from "./pages/DoorsPage";
 import EmployeesPage from "./pages/EmployeesPage";
-import MeasurementsPage from "./pages/MeasurementsPage"; // Nova Página
+import SettingsPage from "./pages/SettingsPage";
+import ProfilePage from "./pages/ProfilePage";
+import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Componente para gerenciar o estado inicial do App
+const AppContent = () => {
+  const { isLoading, session } = useSession();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/login" element={!session ? <Login /> : <Navigate to="/" replace />} />
+      
+      {/* Rotas Protegidas */}
+      <Route element={session ? <Layout /> : <Navigate to="/login" replace />}>
+        <Route path="/" element={<Index />} />
+        <Route path="/demands" element={<DemandsPage />} />
+        <Route path="/measurements" element={<MeasurementsPage />} />
+        <Route path="/ceramics" element={<CeramicsPage />} />
+        <Route path="/paintings" element={<PaintingsPage />} />
+        <Route path="/openings" element={<OpeningsPage />} />
+        <Route path="/doors" element={<DoorsPage />} />
+        <Route path="/employees" element={<EmployeesPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+      </Route>
+
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -29,26 +74,11 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <SessionProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route element={<Layout />}>
-                <Route path="/" element={<Index />} />
-                <Route path="/demands" element={<DemandsPage />} />
-                <Route path="/measurements" element={<MeasurementsPage />} /> {/* Nova Rota */}
-                <Route path="/ceramics" element={<CeramicsPage />} />
-                <Route path="/paintings" element={<PaintingsPage />} />
-                <Route path="/openings" element={<OpeningsPage />} />
-                <Route path="/doors" element={<DoorsPage />} />
-                <Route path="/employees" element={<EmployeesPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-            </Routes>
+            <AppContent />
           </SessionProvider>
         </BrowserRouter>
       </TooltipProvider>
-ThemeProvider    </ThemeProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
