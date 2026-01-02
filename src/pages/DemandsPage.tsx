@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { ListChecks, Filter, PlusCircle, LayoutGrid, List, Loader2, FileText } from 'lucide-react';
+import { ListChecks, Filter, PlusCircle, LayoutGrid, List, Loader2, FileText, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DemandsFilterPanel from '@/components/demands/DemandsFilterPanel';
 import DemandCard from '@/components/demands/DemandCard';
 import CreateDemandDialog from '@/components/demands/CreateDemandDialog';
+import CreateApartmentDemandsDialog from '@/components/demands/CreateApartmentDemandsDialog';
 import useSiteConfig from '@/hooks/use-site-config';
 import useDemands, { DemandDetail } from '@/hooks/use-demands';
 import DemandsByBlockViewer from '@/components/demands/DemandsByBlockViewer';
@@ -31,6 +32,7 @@ const SimpleDemandsList: React.FC<{ demands: DemandDetail[], isLoading: boolean,
 const DemandsPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isAptCreateOpen, setIsAptCreateOpen] = useState(false);
   const [isGroupedView, setIsGroupedView] = useState(false);
   const [filters, setFilters] = useState({});
   const { data: siteConfig } = useSiteConfig();
@@ -70,7 +72,7 @@ const DemandsPage: React.FC = () => {
           <ListChecks className="inline-block w-8 h-8 mr-2 text-primary" />
           Gerenciamento de Demandas
         </h1>
-        <div className="flex space-x-4 flex-shrink-0">
+        <div className="flex space-x-2 sm:space-x-4 flex-shrink-0 flex-wrap gap-y-2">
           <Button variant="outline" onClick={handleExportPdf} disabled={!demands || demands.length === 0} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30">
             <FileText className="w-4 h-4 mr-2" /> PDF
           </Button>
@@ -80,6 +82,11 @@ const DemandsPage: React.FC = () => {
           <Button variant="outline" onClick={() => setIsFilterOpen(!isFilterOpen)} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30">
             <Filter className="w-4 h-4 mr-2" /> Filtros
           </Button>
+          
+          <Button variant="secondary" onClick={() => setIsAptCreateOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+            <ClipboardList className="w-4 h-4 mr-2" /> Checklist Apto
+          </Button>
+
           <Button onClick={() => setIsCreateOpen(true)}><PlusCircle className="w-4 h-4 mr-2" /> Nova Demanda</Button>
         </div>
       </div>
@@ -93,6 +100,9 @@ const DemandsPage: React.FC = () => {
       )}
 
       <CreateDemandDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      
+      {/* Novo Diálogo de Checklist por Apartamento */}
+      <CreateApartmentDemandsDialog open={isAptCreateOpen} onOpenChange={setIsAptCreateOpen} />
     </div>
   );
 };
