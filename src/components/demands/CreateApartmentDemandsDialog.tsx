@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -97,7 +96,7 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
 
   return (
     <Dialog open={open} onOpenChange={(val) => { if(!val) resetForm(); onOpenChange(val); }}>
-      <DialogContent className="w-[95vw] max-w-2xl backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-2xl border border-white/20 flex flex-col max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-2xl backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-2xl border border-white/20 p-0 overflow-hidden flex flex-col h-[90vh]">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="flex items-center text-xl">
             <Home className="w-5 h-5 mr-2 text-primary" />
@@ -105,6 +104,7 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
           </DialogTitle>
         </DialogHeader>
         
+        {/* Fix Header Area */}
         <div className="px-6 py-2 grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs font-bold">Bloco *</Label>
@@ -130,8 +130,9 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
           <Separator className="my-2" />
         </div>
 
-        <ScrollArea className="flex-1 px-6">
-          <div className="space-y-6 py-4">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
+          <div className="space-y-6">
             {rows.map((row, index) => (
               <div key={row.id} className="p-4 border rounded-lg bg-background/50 space-y-4 relative group">
                 <div className="flex justify-between items-center">
@@ -145,7 +146,7 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-[10px] font-bold uppercase">Serviço *</Label>
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Serviço *</Label>
                     <Select value={row.serviceTypeId} onValueChange={(val) => updateRow(row.id, 'serviceTypeId', val)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Tipo" /></SelectTrigger>
                       <SelectContent>
@@ -154,7 +155,7 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] font-bold uppercase">Cômodo *</Label>
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground">Cômodo *</Label>
                     <Select value={row.roomId} onValueChange={(val) => updateRow(row.id, 'roomId', val)}>
                       <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Local" /></SelectTrigger>
                       <SelectContent>
@@ -165,7 +166,7 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-[10px] font-bold uppercase">Descrição da Pendência</Label>
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Descrição da Pendência</Label>
                   <Input 
                     value={row.description} 
                     onChange={(e) => updateRow(row.id, 'description', e.target.value)}
@@ -174,40 +175,47 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4 border-t pt-3 mt-3">
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id={`contractor-${row.id}`} 
                       checked={row.isContractorPending} 
                       onCheckedChange={(val) => updateRow(row.id, 'isContractorPending', !!val)}
                     />
-                    <Label htmlFor={`contractor-${row.id}`} className="text-[10px] font-bold flex items-center">
-                      <HardHat className="w-3 h-3 mr-1" /> TERCEIRIZADO?
+                    <Label htmlFor={`contractor-${row.id}`} className="text-[10px] font-bold flex items-center cursor-pointer">
+                      <HardHat className="w-3 h-3 mr-1 text-red-500" /> TERCEIRIZADO?
                     </Label>
                   </div>
                   
                   {row.isContractorPending && (
-                    <Select value={row.contractorId} onValueChange={(val) => updateRow(row.id, 'contractorId', val)}>
-                      <SelectTrigger className="h-8 text-xs min-w-[150px] flex-1"><SelectValue placeholder="Qual?" /></SelectTrigger>
-                      <SelectContent>
-                        {configData?.contractors.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex-1 min-w-[150px]">
+                      <Select value={row.contractorId} onValueChange={(val) => updateRow(row.id, 'contractorId', val)}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Qual empreiteiro?" /></SelectTrigger>
+                        <SelectContent>
+                          {configData?.contractors.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   )}
                 </div>
               </div>
             ))}
             
-            <Button variant="outline" onClick={addRow} className="w-full border-dashed">
-              <Plus className="w-4 h-4 mr-2" /> Adicionar Outro Item ao Apto
+            <Button variant="outline" onClick={addRow} className="w-full border-dashed py-6 hover:bg-accent/50 transition-colors">
+              <Plus className="w-4 h-4 mr-2" /> Adicionar Outro Item ao Apartamento
             </Button>
           </div>
-        </ScrollArea>
+        </div>
         
-        <DialogFooter className="p-6 border-t mt-auto">
-          <Button onClick={() => createDemandsMutation.mutate()} disabled={createDemandsMutation.isPending || !blockId || !apartmentNumber} className="w-full h-11 text-base font-semibold">
+        {/* Fix Footer Area */}
+        <DialogFooter className="p-6 border-t bg-background/50">
+          <Button 
+            onClick={() => createDemandsMutation.mutate()} 
+            disabled={createDemandsMutation.isPending || !blockId || !apartmentNumber} 
+            className="w-full h-12 text-base font-bold shadow-lg"
+          >
             {createDemandsMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
-            Finalizar Checklist ({rows.length} itens)
+            Registrar Checklist ({rows.filter(r => r.serviceTypeId).length} itens válidos)
           </Button>
         </DialogFooter>
       </DialogContent>
