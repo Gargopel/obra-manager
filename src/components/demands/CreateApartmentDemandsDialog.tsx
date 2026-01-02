@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -98,15 +97,15 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
 
   return (
     <Dialog open={open} onOpenChange={(val) => { if(!val) resetForm(); onOpenChange(val); }}>
-      <DialogContent className="w-[95vw] max-w-2xl backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-2xl border border-white/20 flex flex-col max-h-[90vh] p-4 md:p-6">
-        <DialogHeader>
-          <DialogTitle className="flex items-center">
+      <DialogContent className="w-[95vw] max-w-2xl backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-2xl border border-white/20 flex flex-col max-h-[90vh] p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle className="flex items-center text-xl">
             <Home className="w-5 h-5 mr-2 text-primary" />
             Checklist de Demandas por Apartamento
           </DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="px-6 py-2 grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs font-bold">Bloco *</Label>
             <Select value={blockId} onValueChange={setBlockId}>
@@ -127,10 +126,12 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
           </div>
         </div>
 
-        <Separator className="mb-4" />
+        <div className="px-6">
+          <Separator className="my-2" />
+        </div>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6 pb-4">
+        <ScrollArea className="flex-1 px-6">
+          <div className="space-y-6 py-4">
             {rows.map((row, index) => (
               <div key={row.id} className="p-4 border rounded-lg bg-background/50 space-y-4 relative group">
                 <div className="flex justify-between items-center">
@@ -142,7 +143,7 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-[10px] font-bold uppercase">Serviço *</Label>
                     <Select value={row.serviceTypeId} onValueChange={(val) => updateRow(row.id, 'serviceTypeId', val)}>
@@ -173,7 +174,7 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
                   />
                 </div>
 
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id={`contractor-${row.id}`} 
@@ -187,7 +188,7 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
                   
                   {row.isContractorPending && (
                     <Select value={row.contractorId} onValueChange={(val) => updateRow(row.id, 'contractorId', val)}>
-                      <SelectTrigger className="h-8 text-xs flex-1"><SelectValue placeholder="Qual?" /></SelectTrigger>
+                      <SelectTrigger className="h-8 text-xs min-w-[150px] flex-1"><SelectValue placeholder="Qual?" /></SelectTrigger>
                       <SelectContent>
                         {configData?.contractors.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                       </SelectContent>
@@ -203,10 +204,10 @@ const CreateApartmentDemandsDialog: React.FC<CreateApartmentDemandsDialogProps> 
           </div>
         </ScrollArea>
         
-        <DialogFooter className="pt-4 border-t mt-4">
-          <Button onClick={() => createDemandsMutation.mutate()} disabled={createDemandsMutation.isPending || !blockId || !apartmentNumber} className="w-full h-11">
+        <DialogFooter className="p-6 border-t mt-auto">
+          <Button onClick={() => createDemandsMutation.mutate()} disabled={createDemandsMutation.isPending || !blockId || !apartmentNumber} className="w-full h-11 text-base font-semibold">
             {createDemandsMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
-            Finalizar Checklist do Apartamento
+            Finalizar Checklist ({rows.length} itens)
           </Button>
         </DialogFooter>
       </DialogContent>
