@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 import { BLOCKS, APARTMENT_NUMBERS } from '@/utils/construction-structure';
 import useConfigData from '@/hooks/use-config-data';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
