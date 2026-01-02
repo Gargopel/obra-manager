@@ -8,19 +8,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BLOCKS, APARTMENT_NUMBERS } from '@/utils/construction-structure';
 import useConfigData from '@/hooks/use-config-data';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
-import { Loader2, Layers, HardHat } from 'lucide-react';
+import { Loader2, HardHat, ListPlus } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { uploadFile } from '@/integrations/supabase/storage';
 
-const MAX_DESCRIPTION_LENGTH = 400;
-const MAX_IMAGE_SIZE_MB = 5;
 const MAX_IMAGE_WIDTH = 1200;
 
 const compressImage = (file: File): Promise<File> => {
@@ -78,7 +75,6 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
   const [isContractorPending, setIsContractorPending] = useState(false);
   const [contractorId, setContractorId] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
   const resetForm = () => {
     setSelectedBlocks([]);
@@ -89,7 +85,6 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
     setIsContractorPending(false);
     setContractorId('');
     setImageFile(null);
-    setImagePreview(null);
   };
   
   const createDemandMutation = useMutation({
@@ -127,7 +122,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
       if (insertError) throw new Error('Erro ao registrar: ' + insertError.message);
     },
     onSuccess: () => {
-      showSuccess('Registrado com sucesso!');
+      showSuccess('Demandas registradas com sucesso!');
       resetForm();
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: ['demands'] });
@@ -139,14 +134,19 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
 
   return (
     <Dialog open={open} onOpenChange={(val) => { if(!val) resetForm(); onOpenChange(val); }}>
-      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-2xl border border-white/20 flex flex-col max-h-[90vh] p-4 md:p-6">
-        <DialogHeader className="pb-2"><DialogTitle>Nova Demanda em Lote</DialogTitle></DialogHeader>
+      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/95 dark:bg-gray-900/95 shadow-2xl border border-white/20 p-0 overflow-hidden flex flex-col h-[90vh]">
+        <DialogHeader className="p-6 pb-2">
+          <DialogTitle className="flex items-center text-xl">
+            <ListPlus className="w-5 h-5 mr-2 text-primary" />
+            Nova Demanda Simples
+          </DialogTitle>
+        </DialogHeader>
         
-        <ScrollArea className="flex-1 pr-2">
-          <form className="space-y-4 py-2">
+        <div className="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
+          <div className="space-y-6">
             
             <div className="space-y-1.5">
-              <Label className="text-sm font-bold text-primary">Blocos *</Label>
+              <Label className="text-sm font-bold text-primary">Blocos (Múltiplos) *</Label>
               <div className="p-2 border rounded-md bg-background/50 max-h-24 overflow-y-auto">
                 <ToggleGroup type="multiple" variant="outline" className="justify-start flex-wrap gap-1.5" value={selectedBlocks} onValueChange={setSelectedBlocks}>
                   {BLOCKS.map(b => <ToggleGroupItem key={b} value={b} className="w-8 h-8 text-xs">{b}</ToggleGroupItem>)}
@@ -172,7 +172,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm font-bold text-primary">Apartamentos *</Label>
+              <Label className="text-sm font-bold text-primary">Apartamentos/Circulação (Múltiplos) *</Label>
               <div className="p-2 border rounded-lg bg-background/50 max-h-48 overflow-y-auto">
                 <ToggleGroup type="multiple" variant="outline" className="grid grid-cols-4 gap-1.5" value={selectedApartments} onValueChange={setSelectedApartments}>
                   {APARTMENT_NUMBERS.map(a => <ToggleGroupItem key={a} value={a} className="text-[10px] h-7">{a}</ToggleGroupItem>)}
@@ -180,11 +180,10 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
               </div>
             </div>
 
-            {/* Configuração de Empreiteiro */}
             <div className="p-3 border rounded-lg bg-red-50/50 dark:bg-red-900/10 space-y-3">
               <div className="flex items-center space-x-2">
                 <Checkbox id="is-contractor" checked={isContractorPending} onCheckedChange={(val) => setIsContractorPending(!!val)} />
-                <Label htmlFor="is-contractor" className="text-xs font-bold flex items-center"><HardHat className="w-3 h-3 mr-1" /> Pendência de Empreiteiro?</Label>
+                <Label htmlFor="is-contractor" className="text-xs font-bold flex items-center cursor-pointer"><HardHat className="w-3 h-3 mr-1 text-red-500" /> Pendência de Empreiteiro?</Label>
               </div>
               {isContractorPending && (
                 <Select value={contractorId} onValueChange={setContractorId}>
@@ -198,22 +197,23 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
             
             <div className="space-y-1.5">
               <Label className="text-xs font-bold">Descrição</Label>
-              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="O que aconteceu?" className="text-sm" rows={2} />
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="O que aconteceu?" className="text-sm" rows={3} />
             </div>
             
             <div className="space-y-1.5">
               <Label className="text-xs font-bold">Foto (Opcional)</Label>
               <Input type="file" accept="image/*" onChange={(e) => {
                 const file = e.target.files?.[0];
-                if(file) { setImageFile(file); setImagePreview(URL.createObjectURL(file)); }
-              }} className="h-9 text-xs" />
+                if(file) setImageFile(file);
+              }} className="h-10 text-xs" />
             </div>
-          </form>
-        </ScrollArea>
+          </div>
+        </div>
         
-        <DialogFooter className="pt-3 border-t">
-          <Button onClick={() => createDemandMutation.mutate()} disabled={createDemandMutation.isPending || !isFormValid} className="w-full">
-            {createDemandMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Registrar Demandas'}
+        <DialogFooter className="p-6 border-t bg-background/50">
+          <Button onClick={() => createDemandMutation.mutate()} disabled={createDemandMutation.isPending || !isFormValid} className="w-full h-12 text-base font-bold">
+            {createDemandMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
+            Registrar {selectedBlocks.length * selectedApartments.length} Demandas
           </Button>
         </DialogFooter>
       </DialogContent>

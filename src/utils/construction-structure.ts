@@ -15,7 +15,11 @@ export const generateApartmentNumbers = (): string[] => {
   return apartmentNumbers;
 };
 
-export const APARTMENT_NUMBERS = generateApartmentNumbers();
+// Áreas de circulação por andar e total
+export const CIRCULATION_AREAS = ['CIR 1', 'CIR 2', 'CIR 3', 'CIR 4', 'CIR 5', 'CIR TD'];
+
+// Lista completa de locais (Aptos + Circulações)
+export const APARTMENT_NUMBERS = [...generateApartmentNumbers(), ...CIRCULATION_AREAS];
 
 export const DEMAND_STATUSES = ['Pendente', 'Resolvido'];
 
