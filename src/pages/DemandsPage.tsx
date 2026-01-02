@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ListChecks, Filter, PlusCircle, LayoutGrid, List, Loader2, FileText, ClipboardList } from 'lucide-react';
+import { ListChecks, Filter, PlusCircle, LayoutGrid, List, Loader2, FileText, ClipboardList, CheckSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DemandsFilterPanel from '@/components/demands/DemandsFilterPanel';
 import DemandCard from '@/components/demands/DemandCard';
@@ -65,6 +65,30 @@ const DemandsPage: React.FC = () => {
     });
   };
 
+  const handleExportChecklistPdf = () => {
+    if (!demands || demands.length === 0) return;
+    
+    // Formato de Checklist focado em execução de campo
+    const columns = ['', 'Bloco', 'Apto', 'Serviço', 'Cômodo', 'Descrição', 'Assinatura'];
+    const rows = demands.map(d => [
+      '[  ]', // Coluna de Checkbox
+      d.block_id,
+      d.apartment_number,
+      d.service_type_name,
+      d.room_name,
+      d.description || '-',
+      '________________' // Espaço para assinatura/rubrica
+    ]);
+
+    exportToPdf({
+      title: 'Checklist de Execução de Demandas',
+      filename: 'checklist_demandas',
+      columns,
+      rows,
+      siteName: siteConfig?.site_name
+    });
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap justify-between items-center gap-4">
@@ -73,9 +97,15 @@ const DemandsPage: React.FC = () => {
           Gerenciamento de Demandas
         </h1>
         <div className="flex space-x-2 sm:space-x-4 flex-shrink-0 flex-wrap gap-y-2">
-          <Button variant="outline" onClick={handleExportPdf} disabled={!demands || demands.length === 0} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30">
-            <FileText className="w-4 h-4 mr-2" /> PDF
-          </Button>
+          <div className="flex bg-background/50 backdrop-blur-sm p-1 rounded-lg border border-border shadow-sm">
+            <Button variant="ghost" size="sm" onClick={handleExportPdf} disabled={!demands || demands.length === 0} className="h-8">
+              <FileText className="w-4 h-4 mr-2" /> PDF
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleExportChecklistPdf} disabled={!demands || demands.length === 0} className="h-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+              <CheckSquare className="w-4 h-4 mr-2" /> PDF Checklist
+            </Button>
+          </div>
+
           <Button variant="outline" onClick={() => setIsGroupedView(!isGroupedView)} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30">
             {isGroupedView ? <><List className="w-4 h-4 mr-2" /> Lista</> : <><LayoutGrid className="w-4 h-4 mr-2" /> Blocos</>}
           </Button>
@@ -100,8 +130,6 @@ const DemandsPage: React.FC = () => {
       )}
 
       <CreateDemandDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
-      
-      {/* Novo Diálogo de Checklist por Apartamento */}
       <CreateApartmentDemandsDialog open={isAptCreateOpen} onOpenChange={setIsAptCreateOpen} />
     </div>
   );
