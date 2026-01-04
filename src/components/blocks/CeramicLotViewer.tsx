@@ -1,44 +1,38 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, BrickWall, Calendar, Package, MapPin } from 'lucide-react';
+import { Loader2, BrickWall, MapPin, Package, StickyNote } from 'lucide-react';
 import useCeramicLots from '@/hooks/use-ceramic-lots';
-import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 interface CeramicLotViewerProps {
-  blockId: string; // ID do bloco (UUID)
-  blockName: string; // Nome do bloco (A, B, C...)
+  blockId: string;
+  blockName: string;
 }
 
 const CeramicLotViewer: React.FC<CeramicLotViewerProps> = ({ blockId, blockName }) => {
   const { data: lots, isLoading, error } = useCeramicLots(blockId);
 
-  if (isLoading) {
-    return <div className="flex justify-center p-6"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500 p-6">Erro ao carregar lotes: {error.message}</div>;
-  }
+  if (isLoading) return <div className="flex justify-center p-6"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  if (error) return <div className="text-red-500 p-6">Erro ao carregar lotes.</div>;
 
   return (
-    <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50">
-      <CardHeader>
-        <CardTitle className="flex items-center text-xl">
+    <Card className="border-0 shadow-none bg-transparent">
+      <CardHeader className="px-0">
+        <CardTitle className="text-lg flex items-center">
           <BrickWall className="w-5 h-5 mr-2 text-primary" /> 
           Lotes de Cerâmica - Bloco {blockName}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
+      <CardContent className="px-0">
+        <div className="rounded-md border bg-white/50 dark:bg-gray-900/50">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[120px]">Local</TableHead>
+                <TableHead className="w-[180px]">Localização</TableHead>
                 <TableHead>Nº Lote</TableHead>
-                <TableHead>Produto</TableHead>
-                <TableHead>Fabricante</TableHead>
-                <TableHead className="w-[120px]">Data Compra</TableHead>
+                <TableHead>Modelo/Produto</TableHead>
+                <TableHead className="hidden md:table-cell">Notas</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -46,27 +40,35 @@ const CeramicLotViewer: React.FC<CeramicLotViewerProps> = ({ blockId, blockName 
                 lots.map((lot) => (
                   <TableRow key={lot.id}>
                     <TableCell>
-                      <div className="flex items-center text-sm font-medium">
-                        <MapPin className="w-3 h-3 mr-1 text-muted-foreground" />
-                        {lot.location}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center text-sm font-bold">
+                          <MapPin className="w-3 h-3 mr-1 text-primary" />
+                          {lot.apartment_number || `${lot.floor_number}º Andar`}
+                        </div>
+                        <Badge variant="secondary" className="w-fit text-[10px] uppercase">
+                          {lot.location}
+                        </Badge>
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium flex items-center">
-                      <Package className="w-4 h-4 mr-2 text-muted-foreground" />
-                      {lot.lot_number}
-                    </TableCell>
-                    <TableCell>{lot.product_name || 'N/A'}</TableCell>
-                    <TableCell>{lot.manufacturer || 'N/A'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        {lot.purchase_date ? format(new Date(lot.purchase_date), 'dd/MM/yyyy') : 'N/A'}
+                    <TableCell className="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
+                      <div className="flex items-center">
+                        <Package className="w-3 h-3 mr-1 opacity-50" />
+                        {lot.lot_number}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-xs">{lot.product_name || 'N/A'}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground italic">
+                      {lot.notes ? (
+                        <div className="flex items-start">
+                          <StickyNote className="w-3 h-3 mr-1 mt-0.5" />
+                          {lot.notes}
+                        </div>
+                      ) : '-'}
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Nenhum lote de cerâmica cadastrado para este bloco.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground p-8">Nenhum lote registrado para este bloco.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

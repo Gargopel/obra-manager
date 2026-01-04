@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,120 +7,86 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Plus, Trash2, Edit, Save, X, BrickWall, Calendar } from 'lucide-react';
+import { Loader2, Plus, Trash2, BrickWall, LayoutGrid } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import useConfigData from '@/hooks/use-config-data';
-import { format } from 'date-fns';
 import { Label } from '@/components/ui/label';
-import { CERAMIC_LOCATIONS } from '@/utils/construction-structure';
-
-interface CeramicLot {
-  id: string;
-  block_id: string;
-  lot_number: string;
-  manufacturer: string | null;
-  product_name: string | null;
-  purchase_date: string | null;
-  created_at: string;
-  location: 'Apartamentos' | 'Circulação' | 'Sacada';
-}
-
-const fetchCeramicLots = async (blockId: string): Promise<CeramicLot[]> => {
-  if (!blockId) return [];
-  const { data, error } = await supabase
-    .from('ceramic_lots')
-    .select('*')
-    .eq('block_id', blockId)
-    .order('created_at', { ascending: false });
-  
-  if (error) throw error;
-  return data as CeramicLot[];
-};
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import useConfigData from '@/hooks/use-config-data';
+import { APARTMENT_NUMBERS } from '@/utils/construction-structure';
 
 const ManageCeramicLots: React.FC = () => {
   const queryClient = useQueryClient();
-  const { data: configData, isLoading: isLoadingConfig } = useConfigData();
+  const { data: configData } = useConfigData();
   
-  const [selectedBlockId, setSelectedBlockId] = useState<string | undefined>(undefined);
-  const [newLotNumber, setNewLotNumber] = useState('');
-  const [newManufacturer, setNewManufacturer] = useState('');
-  const [newProductName, setNewProductName] = useState('');
-  const [newPurchaseDate, setNewPurchaseDate] = useState(''); // YYYY-MM-DD format
-  const [newLocation, setNewLocation] = useState<string>(CERAMIC_LOCATIONS[0]); // Novo estado para Location
+  const [selectedBlockId, setSelectedBlockId] = useState<string>('');
+  const [selectedFloor, setSelectedFloor] = useState<string>('');
+  const [selectedApartments, setSelectedApartments] = useState<string[]>([]);
+  const [locationType, setLocationType] = useState<'Apartamento' | 'Circulação' | 'Sacada'>('Apartamento');
   
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingLot, setEditingLot] = useState<Partial<CeramicLot>>({});
+  const [lotNumber, setLotNumber] = useState('');
+  const [productName, setProductName] = useState('');
+  const [notes, setNotes] = useState('');
 
-  // Inicializa selectedBlockId com o primeiro bloco assim que os dados de configuração carregarem
-  useEffect(() => {
-    if (configData?.blocks && configData.blocks.length > 0 && !selectedBlockId) {
-      setSelectedBlockId(configData.blocks[0].id);
-    }
-  }, [configData, selectedBlockId]);
+  // Filtra apartamentos baseados no andar selecionado
+  const availableApartments = APARTMENT_NUMBERS.filter(apt => 
+    apt.startsWith(selectedFloor) && !apt.startsWith('CIR')
+  );
 
-  const { data: lots, isLoading, error } = useQuery<CeramicLot[], Error>({
+  const { data: lots, isLoading } = useQuery({
     queryKey: ['ceramicLots', selectedBlockId],
-    queryFn: () => fetchCeramicLots(selectedBlockId!),
-    enabled: !!selectedBlockId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('ceramic_lots').select('*').eq('block_id', selectedBlockId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedBlockId
   });
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      if (!selectedBlockId || !newLotNumber || !newLocation) throw new Error('Selecione o bloco, o local e insira o número do lote.');
+      if (!selectedBlockId || !lotNumber) throw new Error('Bloco e Lote são obrigatórios.');
       
-      const payload = {
-        block_id: selectedBlockId,
-        lot_number: newLotNumber.trim(),
-        manufacturer: newManufacturer.trim() || null,
-        product_name: newProductName.trim() || null,
-        purchase_date: newPurchaseDate || null,
-        location: newLocation, // Adicionando location
-      };
-      
-      const { error } = await supabase.from('ceramic_lots').insert(payload);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      showSuccess('Lote de cerâmica cadastrado com sucesso.');
-      setNewLotNumber('');
-      setNewManufacturer('');
-      setNewProductName('');
-      setNewPurchaseDate('');
-      // Mantém newLocation
-      queryClient.invalidateQueries({ queryKey: ['ceramicLots', selectedBlockId] });
-    },
-    onError: (error) => {
-      showError('Erro ao cadastrar lote: ' + error.message);
-    },
-  });
+      const payloads: any[] = [];
+      const floorInt = selectedFloor ? parseInt(selectedFloor) : null;
 
-  const updateMutation = useMutation({
-    mutationFn: async (lot: Partial<CeramicLot>) => {
-      if (!lot.id) throw new Error('ID do lote ausente.');
-      
-      const { error } = await supabase
-        .from('ceramic_lots')
-        .update({
-          lot_number: lot.lot_number,
-          manufacturer: lot.manufacturer,
-          product_name: lot.product_name,
-          purchase_date: lot.purchase_date,
-          location: lot.location, // Atualizando location
-        })
-        .eq('id', lot.id);
-      
+      if (locationType === 'Circulação') {
+        payloads.push({
+          block_id: selectedBlockId,
+          lot_number: lotNumber,
+          product_name: productName,
+          location: 'Circulação',
+          floor_number: floorInt,
+          notes: notes
+        });
+      } else {
+        if (selectedApartments.length === 0) throw new Error('Selecione ao menos um apartamento.');
+        selectedApartments.forEach(apt => {
+          payloads.push({
+            block_id: selectedBlockId,
+            lot_number: lotNumber,
+            product_name: productName,
+            location: locationType,
+            floor_number: floorInt,
+            apartment_number: apt,
+            notes: notes
+          });
+        });
+      }
+
+      const { error } = await supabase.from('ceramic_lots').insert(payloads);
       if (error) throw error;
     },
     onSuccess: () => {
-      showSuccess('Lote atualizado com sucesso.');
-      setEditingId(null);
-      setEditingLot({});
+      showSuccess('Cerâmicas registradas com sucesso.');
+      setSelectedApartments([]);
+      setLotNumber('');
+      setProductName('');
+      setNotes('');
       queryClient.invalidateQueries({ queryKey: ['ceramicLots', selectedBlockId] });
     },
-    onError: (error) => {
-      showError('Erro ao atualizar lote: ' + error.message);
-    },
+    onError: (err: any) => showError(err.message),
   });
 
   const deleteMutation = useMutation({
@@ -127,253 +95,120 @@ const ManageCeramicLots: React.FC = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      showSuccess('Lote excluído com sucesso.');
+      showSuccess('Registro excluído.');
       queryClient.invalidateQueries({ queryKey: ['ceramicLots', selectedBlockId] });
-    },
-    onError: (error) => {
-      showError('Erro ao excluir lote: ' + error.message);
     },
   });
 
-  const handleEdit = (lot: CeramicLot) => {
-    setEditingId(lot.id);
-    setEditingLot(lot);
-  };
-
-  const handleSave = () => {
-    if (editingLot.lot_number && editingLot.location) {
-      updateMutation.mutate(editingLot);
-    } else {
-      showError('O número do lote e o local não podem ser vazios.');
-    }
-  };
-  
-  const handleLotChange = (key: keyof CeramicLot, value: string) => {
-    setEditingLot(prev => ({ ...prev, [key]: value }));
-  };
-
-  const selectedBlockName = configData?.blocks.find(b => b.id === selectedBlockId)?.name;
-
   return (
-    <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50">
-      <CardHeader>
-        <CardTitle className="flex items-center"><BrickWall className="w-5 h-5 mr-2" /> Gerenciar Lotes de Cerâmica</CardTitle>
-      </CardHeader>
-      <CardContent>
-        
-        {/* Seleção de Bloco */}
-        <div className="mb-6 space-y-2">
-          <Label htmlFor="block-select">Selecione o Bloco</Label>
-          <Select 
-            value={selectedBlockId || ''} 
-            onValueChange={setSelectedBlockId}
-            disabled={isLoadingConfig}
-          >
-            <SelectTrigger id="block-select">
-              <SelectValue placeholder="Escolha o Bloco para gerenciar lotes" />
-            </SelectTrigger>
-            <SelectContent>
-              {configData?.blocks.map(block => (
-                <SelectItem key={block.id} value={block.id}>{`Bloco ${block.name}`}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {selectedBlockId && (
-          <>
-            {/* Formulário de Criação */}
-            <div className="mb-8 p-4 border rounded-lg bg-accent/50">
-              <h3 className="text-lg font-semibold mb-3">Adicionar Novo Lote ao Bloco {selectedBlockName}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                {/* Novo campo de Localização */}
-                <div className="space-y-2 md:col-span-1">
-                  <Label htmlFor="new-location" className="sr-only">Localização</Label>
-                  <Select value={newLocation} onValueChange={setNewLocation}>
-                    <SelectTrigger id="new-location">
-                      <SelectValue placeholder="Localização" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CERAMIC_LOCATIONS.map(loc => (
-                        <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <Input 
-                  placeholder="Nº do Lote (Obrigatório)" 
-                  value={newLotNumber} 
-                  onChange={(e) => setNewLotNumber(e.target.value)} 
-                  required
-                />
-                <Input 
-                  placeholder="Fabricante" 
-                  value={newManufacturer} 
-                  onChange={(e) => setNewManufacturer(e.target.value)} 
-                />
-                <Input 
-                  placeholder="Nome do Produto" 
-                  value={newProductName} 
-                  onChange={(e) => setNewProductName(e.target.value)} 
-                />
-                <div className="flex items-center space-x-2">
-                  <Input 
-                    type="date"
-                    value={newPurchaseDate} 
-                    onChange={(e) => setNewPurchaseDate(e.target.value)} 
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={() => createMutation.mutate()} 
-                    disabled={!newLotNumber || createMutation.isPending}
-                    size="icon"
-                  >
-                    {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </div>
+    <div className="space-y-6">
+      <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30">
+        <CardHeader>
+          <CardTitle className="flex items-center"><Plus className="w-5 h-5 mr-2" /> Novo Registro de Cerâmica</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Bloco *</Label>
+              <Select value={selectedBlockId} onValueChange={setSelectedBlockId}>
+                <SelectTrigger><SelectValue placeholder="Selecione o Bloco" /></SelectTrigger>
+                <SelectContent>
+                  {configData?.blocks.map(b => <SelectItem key={b.id} value={b.id}>{`Bloco ${b.name}`}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Andar *</Label>
+              <Select value={selectedFloor} onValueChange={(val) => { setSelectedFloor(val); setSelectedApartments([]); }}>
+                <SelectTrigger><SelectValue placeholder="Selecione o Andar" /></SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5].map(f => <SelectItem key={f} value={f.toString()}>{`${f}º Andar`}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Tipo de Local</Label>
+              <Select value={locationType} onValueChange={(val: any) => setLocationType(val)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Apartamento">Apartamento (Piso Interno)</SelectItem>
+                  <SelectItem value="Sacada">Sacada</SelectItem>
+                  <SelectItem value="Circulação">Circulação (Andar)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-            {/* Tabela de Lotes */}
-            <div className="rounded-md border">
+          {locationType !== 'Circulação' && selectedFloor && (
+            <div className="space-y-2">
+              <Label>Apartamentos do {selectedFloor}º Andar *</Label>
+              <ToggleGroup type="multiple" variant="outline" className="justify-start gap-2" value={selectedApartments} onValueChange={setSelectedApartments}>
+                {availableApartments.map(apt => (
+                  <ToggleGroupItem key={apt} value={apt} className="w-16 h-10">{apt}</ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nº do Lote *</Label>
+              <Input value={lotNumber} onChange={(e) => setLotNumber(e.target.value)} placeholder="Ex: L123456" />
+            </div>
+            <div className="space-y-2">
+              <Label>Nome/Modelo da Cerâmica</Label>
+              <Input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Ex: Porcelanato 60x60 Beige" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Observações (Opcional)</Label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Detalhes adicionais..." />
+          </div>
+
+          <Button onClick={() => createMutation.mutate()} disabled={createMutation.isPending || !selectedBlockId || !lotNumber} className="w-full">
+            {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+            Registrar Cerâmica
+          </Button>
+        </CardContent>
+      </Card>
+
+      {selectedBlockId && (
+        <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30">
+          <CardHeader><CardTitle className="text-lg flex items-center"><LayoutGrid className="w-5 h-5 mr-2" /> Registros Recentes no Bloco</CardTitle></CardHeader>
+          <CardContent>
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Local</TableHead> {/* Nova coluna */}
+                    <TableHead>Local</TableHead>
                     <TableHead>Lote</TableHead>
                     <TableHead>Produto</TableHead>
-                    <TableHead>Fabricante</TableHead>
-                    <TableHead className="w-[120px]">Data Compra</TableHead>
-                    <TableHead className="w-[100px] text-right">Ações</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
-                    <TableRow><TableCell colSpan={6} className="text-center"><Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" /></TableCell></TableRow>
-                  ) : lots && lots.length > 0 ? (
-                    lots.map((lot) => (
-                      <TableRow key={lot.id}>
-                        <TableCell>
-                          {editingId === lot.id ? (
-                            <Select 
-                              value={editingLot.location || ''} 
-                              onValueChange={(val) => handleLotChange('location', val)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {CERAMIC_LOCATIONS.map(loc => (
-                                  <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            lot.location
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {editingId === lot.id ? (
-                            <Input 
-                              value={editingLot.lot_number || ''} 
-                              onChange={(e) => handleLotChange('lot_number', e.target.value)} 
-                            />
-                          ) : (
-                            lot.lot_number
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {editingId === lot.id ? (
-                            <Input 
-                              value={editingLot.product_name || ''} 
-                              onChange={(e) => handleLotChange('product_name', e.target.value)} 
-                            />
-                          ) : (
-                            lot.product_name || 'N/A'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {editingId === lot.id ? (
-                            <Input 
-                              value={editingLot.manufacturer || ''} 
-                              onChange={(e) => handleLotChange('manufacturer', e.target.value)} 
-                            />
-                          ) : (
-                            lot.manufacturer || 'N/A'
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {editingId === lot.id ? (
-                            <Input 
-                              type="date"
-                              value={editingLot.purchase_date || ''} 
-                              onChange={(e) => handleLotChange('purchase_date', e.target.value)} 
-                            />
-                          ) : (
-                            lot.purchase_date ? format(new Date(lot.purchase_date), 'dd/MM/yyyy') : 'N/A'
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right space-x-2">
-                          {editingId === lot.id ? (
-                            <>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={handleSave} 
-                                disabled={updateMutation.isPending}
-                              >
-                                <Save className="w-4 h-4 text-green-600" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => setEditingId(null)}
-                              >
-                                <X className="w-4 h-4 text-muted-foreground" />
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => handleEdit(lot)}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => deleteMutation.mutate(lot.id)}
-                                disabled={deleteMutation.isPending}
-                              >
-                                <Trash2 className="w-4 h-4 text-destructive" />
-                              </Button>
-                            </>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhum lote cadastrado para este bloco.</TableCell></TableRow>
-                  )}
+                  {lots?.slice(0, 10).map((lot: any) => (
+                    <TableRow key={lot.id}>
+                      <TableCell className="text-xs font-medium">
+                        {lot.location} {lot.apartment_number || `${lot.floor_number}º Andar`}
+                      </TableCell>
+                      <TableCell className="text-xs">{lot.lot_number}</TableCell>
+                      <TableCell className="text-xs">{lot.product_name}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(lot.id)} className="h-8 w-8 text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </div>
-          </>
-        )}
-        {!selectedBlockId && !isLoadingConfig && configData?.blocks.length === 0 && (
-          <p className="text-center text-red-500 mt-4">Nenhum bloco cadastrado. Cadastre blocos na aba 'Blocos' primeiro.</p>
-        )}
-        {!selectedBlockId && (isLoading || isLoadingConfig) && (
-          <p className="text-center text-muted-foreground mt-4">Carregando dados de configuração...</p>
-        )}
-        {!selectedBlockId && !isLoadingConfig && configData?.blocks.length > 0 && (
-          <p className="text-center text-muted-foreground mt-4">Selecione um bloco acima para gerenciar os lotes de cerâmica.</p>
-        )}
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 

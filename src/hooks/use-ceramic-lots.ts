@@ -9,7 +9,10 @@ export interface CeramicLot {
   product_name: string | null;
   purchase_date: string | null;
   created_at: string;
-  location: 'Apartamentos' | 'Circulação' | 'Sacada'; // Novo campo
+  location: 'Apartamento' | 'Circulação' | 'Sacada';
+  floor_number: number | null;
+  apartment_number: string | null;
+  notes: string | null;
 }
 
 const fetchCeramicLotsByBlockId = async (blockId: string): Promise<CeramicLot[]> => {
@@ -19,7 +22,8 @@ const fetchCeramicLotsByBlockId = async (blockId: string): Promise<CeramicLot[]>
     .from('ceramic_lots')
     .select('*')
     .eq('block_id', blockId)
-    .order('created_at', { ascending: false });
+    .order('floor_number', { ascending: true })
+    .order('apartment_number', { ascending: true });
   
   if (error) throw error;
   return data as CeramicLot[];
