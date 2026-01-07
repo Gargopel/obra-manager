@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ListChecks, Filter, PlusCircle, LayoutGrid, List, Loader2, FileText, ClipboardList, CheckSquare } from 'lucide-react';
+import { ListChecks, Filter, PlusCircle, LayoutGrid, List, Loader2, FileText, ClipboardList, CheckSquare, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DemandsFilterPanel from '@/components/demands/DemandsFilterPanel';
 import DemandCard from '@/components/demands/DemandCard';
 import CreateDemandDialog from '@/components/demands/CreateDemandDialog';
 import CreateApartmentDemandsDialog from '@/components/demands/CreateApartmentDemandsDialog';
+import BulkCreateDemandsDialog from '@/components/demands/BulkCreateDemandsDialog'; // Novo componente
 import useSiteConfig from '@/hooks/use-site-config';
 import useDemands, { DemandDetail } from '@/hooks/use-demands';
 import DemandsByBlockViewer from '@/components/demands/DemandsByBlockViewer';
@@ -33,6 +34,7 @@ const DemandsPage: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isAptCreateOpen, setIsAptCreateOpen] = useState(false);
+  const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false); // Novo estado
   const [isGroupedView, setIsGroupedView] = useState(false);
   const [filters, setFilters] = useState({});
   const { data: siteConfig } = useSiteConfig();
@@ -97,9 +99,7 @@ const DemandsPage: React.FC = () => {
           Gerenciamento de Demandas
         </h1>
         
-        {/* Container de Botões com Wrap Melhorado */}
         <div className="flex flex-wrap gap-2 sm:gap-4 items-center">
-          {/* Grupo de PDF */}
           <div className="flex bg-background/50 backdrop-blur-sm p-1 rounded-lg border border-border shadow-sm">
             <Button variant="ghost" size="sm" onClick={handleExportPdf} disabled={!demands || demands.length === 0} className="h-8">
               <FileText className="w-4 h-4 mr-2" /> PDF
@@ -117,6 +117,10 @@ const DemandsPage: React.FC = () => {
             <Filter className="w-4 h-4 mr-2" /> Filtros
           </Button>
           
+          <Button variant="secondary" onClick={() => setIsBulkCreateOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Layers className="w-4 h-4 mr-2" /> Cadastro em Lote
+          </Button>
+
           <Button variant="secondary" onClick={() => setIsAptCreateOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white">
             <ClipboardList className="w-4 h-4 mr-2" /> Checklist Apto
           </Button>
@@ -135,6 +139,7 @@ const DemandsPage: React.FC = () => {
 
       <CreateDemandDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
       <CreateApartmentDemandsDialog open={isAptCreateOpen} onOpenChange={setIsAptCreateOpen} />
+      <BulkCreateDemandsDialog open={isBulkCreateOpen} onOpenChange={setIsBulkCreateOpen} />
     </div>
   );
 };
