@@ -96,7 +96,10 @@ const DemandsPage: React.FC = () => {
           <ListChecks className="inline-block w-8 h-8 mr-2 text-primary" />
           Gerenciamento de Demandas
         </h1>
-        <div className="flex space-x-2 sm:space-x-4 flex-shrink-0 flex-wrap gap-y-2">
+        
+        {/* Container de Botões com Wrap Melhorado */}
+        <div className="flex flex-wrap gap-2 sm:gap-4 items-center">
+          {/* Grupo de PDF */}
           <div className="flex bg-background/50 backdrop-blur-sm p-1 rounded-lg border border-border shadow-sm">
             <Button variant="ghost" size="sm" onClick={handleExportPdf} disabled={!demands || demands.length === 0} className="h-8">
               <FileText className="w-4 h-4 mr-2" /> PDF
@@ -109,6 +112,7 @@ const DemandsPage: React.FC = () => {
           <Button variant="outline" onClick={() => setIsGroupedView(!isGroupedView)} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30">
             {isGroupedView ? <><List className="w-4 h-4 mr-2" /> Lista</> : <><LayoutGrid className="w-4 h-4 mr-2" /> Blocos</>}
           </Button>
+
           <Button variant="outline" onClick={() => setIsFilterOpen(!isFilterOpen)} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30">
             <Filter className="w-4 h-4 mr-2" /> Filtros
           </Button>
