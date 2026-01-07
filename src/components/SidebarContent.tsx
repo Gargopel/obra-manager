@@ -1,12 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ListChecks, Settings, LogOut, LayoutDashboard, User, BrickWall, PaintBucket, DoorOpen, DoorClosed, Users, Ruler } from 'lucide-react';
+import { ListChecks, Settings, LogOut, LayoutDashboard, User, BrickWall, PaintBucket, DoorOpen, DoorClosed, Users, Ruler, CloudUpload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import useSiteConfig from '@/hooks/use-site-config';
 import ThemeToggle from './ThemeToggle';
+import { useOfflineDemands } from '@/hooks/use-offline-demands';
+import { Badge } from './ui/badge';
 
 interface SidebarContentProps {
   onLinkClick?: () => void;
@@ -15,6 +17,7 @@ interface SidebarContentProps {
 const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
   const { isAdmin, profile } = useSession();
   const { data: siteConfig } = useSiteConfig();
+  const { drafts } = useOfflineDemands();
   
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -24,7 +27,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
     { name: 'Demandas', icon: ListChecks, path: '/demands' },
-    { name: 'Medição', icon: Ruler, path: '/measurements' }, // Novo Item
+    { name: 'Medição', icon: Ruler, path: '/measurements' },
     { name: 'Cerâmicas', icon: BrickWall, path: '/ceramics' },
     { name: 'Pinturas', icon: PaintBucket, path: '/paintings' },
     { name: 'Aberturas', icon: DoorOpen, path: '/openings' },
@@ -42,7 +45,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
         {siteConfig?.site_name || 'Obra Manager'}
       </div>
       
-      <nav className="flex-1 space-y-2">
+      <nav className="flex-1 space-y-1">
         {navItems.map((item) => (
           <Link
             key={item.path}
@@ -54,6 +57,23 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
             {item.name}
           </Link>
         ))}
+
+        {/* Link de Sincronização Offline */}
+        <Link
+          to="/sync"
+          onClick={onLinkClick}
+          className="flex items-center justify-between p-3 rounded-lg text-sm font-medium text-foreground hover:bg-accent/70 transition-colors relative"
+        >
+          <div className="flex items-center">
+            <CloudUpload className="w-5 h-5 mr-3 text-blue-500" />
+            Sincronizar
+          </div>
+          {drafts.length > 0 && (
+            <Badge variant="destructive" className="animate-pulse h-5 w-5 flex items-center justify-center p-0 rounded-full">
+              {drafts.length}
+            </Badge>
+          )}
+        </Link>
       </nav>
       
       <div className="mt-auto pt-4 border-t border-border/50 space-y-2">

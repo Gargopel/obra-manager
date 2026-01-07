@@ -19,6 +19,7 @@ import DoorsPage from "./pages/DoorsPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
+import SyncPage from "./pages/SyncPage"; // Nova Página
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -34,7 +35,6 @@ const queryClient = new QueryClient({
 const AppRoutes = () => {
   const { isLoading, session } = useSession();
 
-  // Bloqueio total enquanto decide o estado
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -45,13 +45,11 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Rota de Login: se estiver logado, foge para a home */}
       <Route 
         path="/login" 
         element={session ? <Navigate to="/" replace /> : <Login />} 
       />
       
-      {/* Rotas Privadas: se não estiver logado, vai para o login */}
       <Route element={session ? <Layout /> : <Navigate to="/login" replace />}>
         <Route path="/" element={<Index />} />
         <Route path="/demands" element={<DemandsPage />} />
@@ -63,6 +61,7 @@ const AppRoutes = () => {
         <Route path="/employees" element={<EmployeesPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/sync" element={<SyncPage />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

@@ -14,9 +14,10 @@ import useConfigData from '@/hooks/use-config-data';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
-import { Loader2, HardHat, ListPlus } from 'lucide-react';
+import { Loader2, HardHat, ListPlus, WifiOff } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { uploadFile } from '@/integrations/supabase/storage';
+import { useOfflineDemands } from '@/hooks/use-offline-demands';
 
 const MAX_IMAGE_WIDTH = 1200;
 
@@ -65,6 +66,7 @@ interface CreateDemandDialogProps {
 const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenChange }) => {
   const { data: configData, isLoading: isLoadingConfig } = useConfigData();
   const { user } = useSession();
+  const { saveDraft } = useOfflineDemands();
   const queryClient = useQueryClient();
   
   const [selectedBlocks, setSelectedBlocks] = useState<string[]>([]);
@@ -85,6 +87,33 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
     setIsContractorPending(false);
     setContractorId('');
     setImageFile(null);
+  };
+
+  const handleSaveOffline = () => {
+    if (!isFormValid) return;
+    
+    const payloads: any[] = [];
+    selectedBlocks.forEach(block => {
+      selectedApartments.forEach(apt => {
+        payloads.push({
+          user_id: user?.id,
+          block_id: block,
+          apartment_number: apt,
+          service_type_id: serviceTypeId,
+          room_id: roomId,
+          description: description.trim() || null,
+          is_contractor_pending: isContractorPending,
+          contractor_id: isContractorPending && contractorId ? contractorId : null,
+          image_url: null, // Fotos não são suportadas offline por limite de memória local
+          status: 'Pendente',
+          created_at: new Date().toISOString()
+        });
+      });
+    });
+
+    saveDraft(payloads, 'simple');
+    resetForm();
+    onOpenChange(false);
   };
   
   const createDemandMutation = useMutation({
@@ -127,7 +156,9 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: ['demands'] });
     },
-    onError: (error: any) => showError(error.message),
+    onError: (error: any) => {
+      showError("Erro na conexão. Deseja salvar como rascunho?");
+    },
   });
   
   const isFormValid = selectedBlocks.length > 0 && selectedApartments.length > 0 && serviceTypeId && roomId;
@@ -201,7 +232,7 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
             </div>
             
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold">Foto (Opcional)</Label>
+              <Label className="text-xs font-bold">Foto (Opcional - Requer Internet)</Label>
               <Input type="file" accept="image/*" onChange={(e) => {
                 const file = e.target.files?.[0];
                 if(file) setImageFile(file);
@@ -210,10 +241,22 @@ const CreateDemandDialog: React.FC<CreateDemandDialogProps> = ({ open, onOpenCha
           </div>
         </div>
         
-        <DialogFooter className="p-6 border-t bg-background/50">
-          <Button onClick={() => createDemandMutation.mutate()} disabled={createDemandMutation.isPending || !isFormValid} className="w-full h-12 text-base font-bold">
+        <DialogFooter className="p-6 border-t bg-background/50 grid grid-cols-2 gap-2">
+          <Button 
+            variant="outline"
+            onClick={handleSaveOffline} 
+            disabled={!isFormValid}
+            className="flex items-center border-blue-200 text-blue-600 hover:bg-blue-50"
+          >
+            <WifiOff className="w-4 h-4 mr-2" /> Salvar Offline
+          </Button>
+          <Button 
+            onClick={() => createDemandMutation.mutate()} 
+            disabled={createDemandMutation.isPending || !isFormValid} 
+            className="font-bold"
+          >
             {createDemandMutation.isPending ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : null}
-            Registrar {selectedBlocks.length * selectedApartments.length} Demandas
+            Enviar Agora
           </Button>
         </DialogFooter>
       </DialogContent>
