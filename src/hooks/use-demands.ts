@@ -7,8 +7,8 @@ interface Filters {
   service_type_id?: string;
   room_id?: string;
   status?: string;
-  is_contractor_pending?: boolean; // Novo filtro
-  contractor_id?: string; // Novo filtro
+  is_contractor_pending?: boolean;
+  contractor_id?: string;
 }
 
 export interface DemandDetail {
@@ -28,6 +28,7 @@ export interface DemandDetail {
   is_contractor_pending: boolean;
   contractor_id: string | null;
   contractor_name: string | null;
+  assigned_to: string | null; // Adicionado
 }
 
 const useDemands = (filters: Filters) => {
@@ -39,34 +40,16 @@ const useDemands = (filters: Filters) => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (filters.block_id) {
-        query = query.eq('block_id', filters.block_id);
-      }
-      if (filters.apartment_number) {
-        query = query.eq('apartment_number', filters.apartment_number);
-      }
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
-      if (filters.service_type_id) {
-        query = query.eq('service_type_id', filters.service_type_id);
-      }
-      if (filters.room_id) {
-        query = query.eq('room_id', filters.room_id);
-      }
-      
-      // Aplicando novos filtros de empreiteiro
-      if (filters.is_contractor_pending !== undefined) {
-        query = query.eq('is_contractor_pending', filters.is_contractor_pending);
-      }
-      if (filters.contractor_id) {
-        query = query.eq('contractor_id', filters.contractor_id);
-      }
+      if (filters.block_id) query = query.eq('block_id', filters.block_id);
+      if (filters.apartment_number) query = query.eq('apartment_number', filters.apartment_number);
+      if (filters.status) query = query.eq('status', filters.status);
+      if (filters.service_type_id) query = query.eq('service_type_id', filters.service_type_id);
+      if (filters.room_id) query = query.eq('room_id', filters.room_id);
+      if (filters.is_contractor_pending !== undefined) query = query.eq('is_contractor_pending', filters.is_contractor_pending);
+      if (filters.contractor_id) query = query.eq('contractor_id', filters.contractor_id);
 
       const { data, error } = await query;
-
       if (error) throw new Error(error.message);
-      
       return data as DemandDetail[];
     },
     refetchInterval: 10000,

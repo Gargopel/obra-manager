@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import useSiteConfig from '@/hooks/use-site-config';
 import ThemeToggle from './ThemeToggle';
+import NotificationBell from './NotificationBell';
 import { useOfflineDemands } from '@/hooks/use-offline-demands';
 import { Badge } from './ui/badge';
 
@@ -41,8 +42,11 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
 
   return (
     <div className="w-full h-full p-4 flex flex-col">
-      <div className="text-2xl font-bold mb-8 text-primary dark:text-primary-foreground">
-        {siteConfig?.site_name || 'Obra Manager'}
+      <div className="flex justify-between items-center mb-8">
+        <div className="text-2xl font-bold text-primary dark:text-primary-foreground truncate">
+          {siteConfig?.site_name || 'Obra Manager'}
+        </div>
+        <NotificationBell />
       </div>
       
       <nav className="flex-1 space-y-1">
@@ -58,7 +62,6 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
           </Link>
         ))}
 
-        {/* Link de Sincronização Offline */}
         <Link
           to="/sync"
           onClick={onLinkClick}

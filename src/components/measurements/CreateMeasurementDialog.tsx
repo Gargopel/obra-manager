@@ -54,7 +54,6 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
           user_id: user.id,
           block_id: blockId,
           location_type: locationType,
-          apartment_number: null,
           floor_number: parseInt(floor),
           service_type_id: serviceTypeId || null,
           notes: notes.trim() || null,
@@ -74,8 +73,6 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
           user_id: user.id,
           block_id: blockId,
           location_type: locationType,
-          apartment_number: null,
-          floor_number: null,
           service_type_id: serviceTypeId || null,
           notes: notes.trim() || null,
         }];
@@ -83,6 +80,20 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
 
       const { error } = await supabase.from('measurements').insert(payloads);
       if (error) throw error;
+
+      // Buscar todos os usuários para notificar
+      const { data: allUsers } = await supabase.from('profiles').select('id');
+      if (allUsers && allUsers.length > 0) {
+        const notifications = allUsers.map(u => ({
+          user_id: u.id,
+          title: 'Nova Solicitação de Medição',
+          message: `Uma nova medição foi aberta no Bloco ${blockId}.`,
+          link: '/measurements'
+        }));
+        // Filtra para não notificar o próprio autor da solicitação (opcional)
+        const others = notifications.filter(n => n.user_id !== user.id);
+        if (others.length > 0) await supabase.from('notifications').insert(others);
+      }
     },
     onSuccess: () => {
       showSuccess('Solicitação(ões) enviada(s) com sucesso!');
@@ -99,10 +110,9 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
 
   return (
     <Dialog open={open} onOpenChange={(val) => { if(!val) resetForm(); onOpenChange(val); }}>
-      <DialogContent className="w-[95vw] max-w-lg backdrop-blur-md bg-white/90 dark:bg-gray-900/90 border border-white/20 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <DialogContent className="w-[95vw] max-w-lg">
         <DialogHeader><DialogTitle>Solicitar Conferência</DialogTitle></DialogHeader>
-        
-        <ScrollArea className="flex-1 pr-4">
+        <ScrollArea className="flex-1 max-h-[70vh] pr-4">
           <div className="space-y-6 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -114,11 +124,7 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
               </div>
               <div className="space-y-2">
                 <Label>Localização *</Label>
-                <Select value={locationType} onValueChange={(val) => { 
-                  setLocationType(val); 
-                  setSelectedFloors([]); 
-                  setSelectedApartments([]); 
-                }}>
+                <Select value={locationType} onValueChange={(val) => { setLocationType(val); setSelectedFloors([]); setSelectedApartments([]); }}>
                   <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
                   <SelectContent>{ASSIGNMENT_LOCATION_TYPES.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                 </Select>
@@ -127,51 +133,19 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
 
             {isApartmentBased && (
               <div className="space-y-3">
-                <Label>Apartamentos (Selecione um ou mais) *</Label>
-                <div className="p-2 border rounded-md bg-background/50 max-h-48 overflow-y-auto">
-                  <ToggleGroup 
-                    type="multiple" 
-                    variant="outline" 
-                    className="grid grid-cols-4 gap-2"
-                    value={selectedApartments}
-                    onValueChange={setSelectedApartments}
-                  >
-                    {APARTMENT_NUMBERS.map(a => (
-                      <ToggleGroupItem 
-                        key={a} 
-                        value={a} 
-                        className="text-xs h-8 px-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                      >
-                        {a}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                </div>
+                <Label>Apartamentos *</Label>
+                <ToggleGroup type="multiple" variant="outline" className="grid grid-cols-4 gap-2" value={selectedApartments} onValueChange={setSelectedApartments}>
+                  {APARTMENT_NUMBERS.map(a => <ToggleGroupItem key={a} value={a} className="text-xs h-8">{a}</ToggleGroupItem>)}
+                </ToggleGroup>
               </div>
             )}
 
             {isFloorBased && (
               <div className="space-y-3">
-                <Label>Andares (Selecione um ou mais) *</Label>
-                <div className="p-2 border rounded-md bg-background/50 max-h-32 overflow-y-auto">
-                  <ToggleGroup 
-                    type="multiple" 
-                    variant="outline" 
-                    className="justify-start flex-wrap gap-2"
-                    value={selectedFloors}
-                    onValueChange={setSelectedFloors}
-                  >
-                    {[1, 2, 3, 4, 5].map(f => (
-                      <ToggleGroupItem 
-                        key={f} 
-                        value={f.toString()} 
-                        className="w-12 h-10 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                      >
-                        {f}º
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                </div>
+                <Label>Andares *</Label>
+                <ToggleGroup type="multiple" variant="outline" className="justify-start gap-2" value={selectedFloors} onValueChange={setSelectedFloors}>
+                  {[1, 2, 3, 4, 5].map(f => <ToggleGroupItem key={f} value={f.toString()} className="w-12 h-10">{f}º</ToggleGroupItem>)}
+                </ToggleGroup>
               </div>
             )}
 
@@ -185,26 +159,14 @@ const CreateMeasurementDialog: React.FC<CreateMeasurementDialogProps> = ({ open,
 
             <div className="space-y-2">
               <Label>Notas/Observações</Label>
-              <Textarea 
-                value={notes} 
-                onChange={(e) => setNotes(e.target.value)} 
-                placeholder="Ex: Conferir rejunte da cozinha" 
-                className="resize-none"
-                rows={3}
-              />
+              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ex: Conferir rejunte" rows={3} />
             </div>
           </div>
         </ScrollArea>
-
-        <DialogFooter className="pt-4 border-t">
+        <DialogFooter className="pt-4">
           <Button onClick={() => createMutation.mutate()} disabled={!isFormValid || createMutation.isPending} className="w-full">
             {createMutation.isPending ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null}
-            {isApartmentBased && selectedApartments.length > 1 
-              ? `Enviar ${selectedApartments.length} Solicitações`
-              : isFloorBased && selectedFloors.length > 1
-                ? `Enviar ${selectedFloors.length} Solicitações` 
-                : 'Enviar Solicitação'
-            }
+            Enviar Solicitação
           </Button>
         </DialogFooter>
       </DialogContent>

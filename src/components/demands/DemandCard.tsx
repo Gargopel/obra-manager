@@ -5,15 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CheckCircle, Clock, MapPin, Home, Wrench, Calendar, Trash2, HardHat } from 'lucide-react';
+import { Loader2, CheckCircle, Clock, MapPin, Home, Wrench, Calendar, Trash2, HardHat, UserPlus } from 'lucide-react';
 import { DemandDetail } from '@/hooks/use-demands';
 import { format } from 'date-fns';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useSession } from '@/contexts/SessionContext';
-import { deleteFile } from '@/integrations/supabase/storage';
 import useConfigData from '@/hooks/use-config-data';
 
 interface DemandCardProps {
@@ -25,6 +24,17 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
   const { isAdmin } = useSession();
   const { data: configData } = useConfigData();
   const isPending = demand.status === 'Pendente';
+
+  // Buscar usuários para atribuição
+  const { data: users } = useQuery({
+    queryKey: ['profiles-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('profiles').select('id, first_name, last_name');
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin
+  });
   
   const updateMutation = useMutation({
     mutationFn: async (payload: Partial<DemandDetail>) => {
@@ -33,17 +43,27 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
         .update(payload)
         .eq('id', demand.id);
       if (error) throw error;
+
+      // Se atribuiu um usuário, gera notificação
+      if (payload.assigned_to) {
+        await supabase.from('notifications').insert({
+          user_id: payload.assigned_to,
+          title: 'Nova Demanda Atribuída',
+          message: `Você foi designado para a demanda no Bloco ${demand.block_id} - Apto ${demand.apartment_number}.`,
+          link: '/demands'
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['demands'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+      showSuccess('Atualizado com sucesso.');
     },
     onError: (error) => showError('Erro ao atualizar: ' + error.message),
   });
 
   const handleDelete = () => {
     if (window.confirm('Tem certeza que deseja excluir esta demanda permanentemente?')) {
-      // Logica de exclusão mantida conforme original
       supabase.from('demands').delete().eq('id', demand.id).then(({error}) => {
         if(!error) {
           showSuccess('Excluído');
@@ -52,9 +72,6 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
       });
     }
   };
-  
-  const statusColor = isPending ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600';
-  const statusText = isPending ? 'Pendente' : 'Resolvido';
   
   const optimizedImageUrl = demand.image_url ? `${demand.image_url}?width=1000&quality=80` : undefined;
   
@@ -66,7 +83,7 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
             <MapPin className="w-5 h-5 mr-2 text-primary" />
             Bloco {demand.block_id} - Apto {demand.apartment_number}
           </CardTitle>
-          <Badge className={statusColor}>{statusText}</Badge>
+          <Badge className={isPending ? 'bg-yellow-500' : 'bg-green-500'}>{demand.status}</Badge>
         </div>
         <CardDescription className="flex items-center text-sm mt-1">
           <Calendar className="w-4 h-4 mr-1" />
@@ -77,16 +94,34 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
         <div className="flex flex-wrap gap-2 text-sm">
           <Badge variant="secondary"><Wrench className="w-3 h-3 mr-1" />{demand.service_type_name}</Badge>
           <Badge variant="secondary"><Home className="w-3 h-3 mr-1" />{demand.room_name}</Badge>
-          {demand.is_contractor_pending && (
-            <Badge variant="destructive" className="bg-red-600">
-              <HardHat className="w-3 h-3 mr-1" /> Pendência: {demand.contractor_name || '...'}
-            </Badge>
-          )}
         </div>
         
         <p className="text-sm text-foreground/80 line-clamp-3">{demand.description || 'Sem descrição.'}</p>
 
-        {/* Seção de Pendência de Empreiteiro */}
+        {/* Atribuição de Usuário (Admin) */}
+        {isAdmin && isPending && (
+          <div className="p-3 border rounded-lg bg-blue-50/30 dark:bg-blue-900/10 space-y-2">
+            <Label className="text-xs font-bold flex items-center text-blue-600 dark:text-blue-400">
+              <UserPlus className="w-3 h-3 mr-1" /> EXECUTAR DEMANDA:
+            </Label>
+            <Select 
+              value={demand.assigned_to || 'none'} 
+              onValueChange={(val) => updateMutation.mutate({ assigned_to: val === 'none' ? null : val })}
+            >
+              <SelectTrigger className="h-8 text-xs border-blue-200">
+                <SelectValue placeholder="Atribuir a um usuário" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum Atribuído</SelectItem>
+                {users?.map(u => (
+                  <SelectItem key={u.id} value={u.id}>{u.first_name} {u.last_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Pendência de Empreiteiro */}
         <div className="p-3 border rounded-lg bg-accent/30 space-y-3">
           <div className="flex items-center space-x-2">
             <Checkbox 
@@ -101,7 +136,6 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
             />
             <Label htmlFor={`contractor-pending-${demand.id}`} className="text-xs font-semibold">Pendência de Empreiteiro?</Label>
           </div>
-
           {demand.is_contractor_pending && (
             <Select 
               value={demand.contractor_id || 'none'} 
@@ -112,18 +146,14 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Nenhum Selecionado</SelectItem>
-                {configData?.contractors.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
+                {configData?.contractors.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
           )}
         </div>
 
-        <div className="flex justify-between items-center pt-2 border-t border-border/50 flex-wrap gap-2">
-          <div className="text-[10px] text-muted-foreground italic">
-            Por: {demand.user_first_name} {demand.user_last_name}
-          </div>
+        <div className="flex justify-between items-center pt-2 border-t border-border/50">
+          <div className="text-[10px] text-muted-foreground italic">Por: {demand.user_first_name}</div>
           <div className="flex space-x-2">
             {demand.image_url && (
               <Dialog>
@@ -133,11 +163,6 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
                 </DialogContent>
               </Dialog>
             )}
-            
-            {isAdmin && (
-              <Button onClick={handleDelete} variant="destructive" size="sm"><Trash2 className="w-4 h-4" /></Button>
-            )}
-            
             <Button 
               size="sm"
               variant={isPending ? 'default' : 'secondary'}
@@ -147,7 +172,6 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
                 resolved_at: isPending ? new Date().toISOString() : null
               })}
             >
-              {isPending ? <CheckCircle className="w-4 h-4 mr-2" /> : <Clock className="w-4 h-4 mr-2" />}
               {isPending ? 'Resolver' : 'Reabrir'}
             </Button>
           </div>
