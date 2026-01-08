@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/sonner";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -21,7 +21,7 @@ import SchedulesPage from "./pages/SchedulesPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import SyncPage from "./pages/SyncPage";
-import UnitHubPage from "./pages/UnitHubPage"; // Novo
+import UnitHubPage from "./pages/UnitHubPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -65,7 +65,7 @@ const AppRoutes = () => {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/sync" element={<SyncPage />} />
-        <Route path="/unit/:blockId/:unitId" element={<UnitHubPage />} /> {/* Nova Rota */}
+        <Route path="/unit/:blockId/:unitId" element={<UnitHubPage />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
