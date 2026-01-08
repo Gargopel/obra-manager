@@ -26,7 +26,7 @@ const ScheduleDashboard: React.FC<ScheduleDashboardProps> = ({ scheduleId, onBac
   const handleExportPdf = () => {
     const columns = ['Item', 'Status', 'Criado em', 'Duração'];
     const rows = demands.map(d => [
-      `B${d.block_id} - ${d.apartment_number} (${d.service_type_name})`,
+      `${d.block_id} - ${d.apartment_number} (${d.service_type_name})`,
       d.status,
       format(new Date(d.created_at), 'dd/MM/yy'),
       d.resolved_at ? 'Concluído' : 'Pendente'
@@ -61,7 +61,7 @@ const ScheduleDashboard: React.FC<ScheduleDashboardProps> = ({ scheduleId, onBac
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Card Principal de Resumo */}
-        <Card className="lg:col-span-2 backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-white/20 shadow-2xl relative overflow-hidden">
+        <Card className="lg:col-span-2 backdrop-blur-md bg-white/70 dark:bg-gray-800/70 border-white/20 shadow-2xl relative overflow-hidden">
           <div className={`absolute top-0 right-0 p-4 font-black opacity-10 text-6xl pointer-events-none ${stats.statusColor}`}>
              {stats.progressPercentage}%
           </div>
@@ -114,7 +114,7 @@ const ScheduleDashboard: React.FC<ScheduleDashboardProps> = ({ scheduleId, onBac
         </Card>
 
         {/* Gráfico de Rosca */}
-        <Card className="backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-white/20">
+        <Card className="backdrop-blur-md bg-white/70 dark:bg-gray-800/70 border-white/20">
           <CardHeader><CardTitle className="text-sm uppercase font-bold text-muted-foreground">Distribuição de Status</CardTitle></CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -147,7 +147,7 @@ const ScheduleDashboard: React.FC<ScheduleDashboardProps> = ({ scheduleId, onBac
       )}
 
       {/* Lista de Demandas Vinculadas */}
-      <Card className="backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-white/20">
+      <Card className="backdrop-blur-md bg-white/70 dark:bg-gray-800/70 border-white/20">
         <CardHeader>
           <CardTitle>Listagem de Tarefas do Escopo</CardTitle>
           <CardDescription>Todas as demandas identificadas que compõem este cronograma.</CardDescription>
@@ -157,7 +157,7 @@ const ScheduleDashboard: React.FC<ScheduleDashboardProps> = ({ scheduleId, onBac
               {demands.map(demand => (
                 <div key={demand.id} className="p-4 border rounded-xl bg-background/50 flex justify-between items-center group hover:border-primary transition-all">
                   <div>
-                    <p className="text-sm font-black">B{demand.block_id} - Apto {demand.apartment_number}</p>
+                    <p className="text-sm font-black">{demand.block_id} - Apto {demand.apartment_number}</p>
                     <p className="text-xs text-muted-foreground">{demand.service_type_name}</p>
                   </div>
                   <Badge variant={demand.status === 'Resolvido' ? 'outline' : 'default'} className={demand.status === 'Resolvido' ? 'border-green-500 text-green-500' : 'bg-yellow-500'}>
