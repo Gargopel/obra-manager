@@ -19,7 +19,8 @@ import DoorsPage from "./pages/DoorsPage";
 import EmployeesPage from "./pages/EmployeesPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
-import SyncPage from "./pages/SyncPage"; // Nova Página
+import SyncPage from "./pages/SyncPage";
+import SchedulesPage from "./pages/SchedulesPage"; // Novo
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -59,6 +60,7 @@ const AppRoutes = () => {
         <Route path="/openings" element={<OpeningsPage />} />
         <Route path="/doors" element={<DoorsPage />} />
         <Route path="/employees" element={<EmployeesPage />} />
+        <Route path="/schedules" element={<SchedulesPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/sync" element={<SyncPage />} />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ListChecks, Settings, LogOut, LayoutDashboard, User, BrickWall, PaintBucket, DoorOpen, DoorClosed, Users, Ruler, CloudUpload } from 'lucide-react';
+import { ListChecks, Settings, LogOut, LayoutDashboard, User, BrickWall, PaintBucket, DoorOpen, DoorClosed, Users, Ruler, CloudUpload, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/contexts/SessionContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -27,6 +27,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({ onLinkClick }) => {
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    { name: 'Cronogramas', icon: CalendarDays, path: '/schedules' }, // Novo
     { name: 'Demandas', icon: ListChecks, path: '/demands' },
     { name: 'Medição', icon: Ruler, path: '/measurements' },
     { name: 'Cerâmicas', icon: BrickWall, path: '/ceramics' },
