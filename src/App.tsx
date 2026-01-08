@@ -29,7 +29,8 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 5000,
+      staleTime: 1000 * 60, // Dados valem por 1 minuto sem precisar de reload visual
+      gcTime: 1000 * 60 * 10, // Mantém em memória por 10 minutos
     },
   },
 });

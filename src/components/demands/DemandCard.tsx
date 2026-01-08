@@ -14,7 +14,6 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useSession } from '@/contexts/SessionContext';
 import useConfigData from '@/hooks/use-config-data';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface DemandCardProps {
   demand: DemandDetail;
@@ -25,6 +24,11 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
   const { isAdmin } = useSession();
   const { data: configData } = useConfigData();
   const isPending = demand.status === 'Pendente';
+
+  // OTIMIZAÇÃO: Gerar URL de imagem com resize do Supabase
+  const optimizedImageUrl = demand.image_url 
+    ? `${demand.image_url}?width=1000&quality=80` 
+    : undefined;
 
   // Buscar todas as demandas pendentes no mesmo local para checar bloqueadores
   const { data: allDemands } = useQuery({
@@ -41,7 +45,7 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
     enabled: isPending
   });
 
-  // Lógica de Bloqueio: Verifica se os serviços dos quais eu dependo estão pendentes aqui
+  // Lógica de Bloqueio
   const myDependencies = configData?.serviceDependencies.filter(d => d.service_id === demand.service_type_id) || [];
   const blockers = allDemands?.filter(d => 
     d.id !== demand.id && 
@@ -81,8 +85,6 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
     onError: (error) => showError(error.message),
   });
 
-  const optimizedImageUrl = demand.image_url ? `${demand.image_url}?width=1000&quality=80` : undefined;
-  
   return (
     <Card className={`backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border ${isBlocked ? 'border-orange-500/50' : 'border-white/30'} transition-all hover:shadow-2xl`}>
       <CardHeader className="pb-2">
@@ -100,9 +102,8 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
       </CardHeader>
       <CardContent className="space-y-4">
         
-        {/* Alerta de Bloqueio */}
         {isBlocked && (
-          <div className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-900/40 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+          <div className="p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-900/40 rounded-xl flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
             <div className="text-xs">
               <p className="font-black text-orange-700 dark:text-orange-400 uppercase tracking-tighter">Tarefa Bloqueada!</p>
@@ -154,8 +155,13 @@ const DemandCard: React.FC<DemandCardProps> = ({ demand }) => {
           <div className="flex space-x-2">
             {demand.image_url && (
               <Dialog>
-                <DialogTrigger asChild><Button variant="outline" size="sm">Ver Foto</Button></DialogTrigger>
-                <DialogContent className="max-w-3xl"><img src={optimizedImageUrl} alt="Demanda" className="w-full h-auto rounded-lg" /></DialogContent>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">Ver Foto</Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-3xl">
+                  {/* Usando a URL otimizada no Modal também */}
+                  <img src={optimizedImageUrl} alt="Demanda" className="w-full h-auto rounded-lg" />
+                </DialogContent>
               </Dialog>
             )}
             <Button 

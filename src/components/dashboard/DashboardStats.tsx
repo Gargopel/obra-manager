@@ -1,20 +1,34 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ListChecks, CheckCircle, Clock, Loader2, TrendingUp } from 'lucide-react';
+import { ListChecks, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import useDashboardData from '@/hooks/use-dashboard-data';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const DashboardStats: React.FC = () => {
   const { data, isLoading, error } = useDashboardData();
 
   if (isLoading) {
     return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <Card key={i} className="h-32 flex items-center justify-center backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </Card>
-        ))}
+      <div className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border-white/30">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-4 rounded-full" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-16 mb-2" />
+                <Skeleton className="h-3 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card className="p-6">
+          <Skeleton className="h-4 w-40 mb-4" />
+          <Skeleton className="h-3 w-full rounded-full" />
+        </Card>
       </div>
     );
   }
@@ -71,7 +85,6 @@ const DashboardStats: React.FC = () => {
         ))}
       </div>
 
-      {/* Andamento Geral da Obra */}
       <Card className="backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 shadow-xl border border-white/30 dark:border-gray-700/50">
         <CardHeader>
           <CardTitle>Andamento Geral da Obra</CardTitle>
