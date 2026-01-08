@@ -35,7 +35,14 @@ export interface ScheduleProgress {
 }
 
 const fetchSchedules = async (userId?: string, isAdmin: boolean = false): Promise<Schedule[]> => {
-  let query = supabase.from('schedules').select('*, profiles(first_name, last_name)').order('created_at', { ascending: false });
+  // Fazemos o join com profiles para pegar o nome do criador
+  let query = supabase
+    .from('schedules')
+    .select(`
+      *,
+      profiles:user_id (first_name, last_name)
+    `)
+    .order('created_at', { ascending: false });
   
   if (!isAdmin && userId) {
     query = query.eq('user_id', userId);
@@ -44,16 +51,20 @@ const fetchSchedules = async (userId?: string, isAdmin: boolean = false): Promis
   const { data, error } = await query;
   if (error) throw error;
 
-  return data.map(s => ({
-    ...s,
-    user_name: s.profiles ? `${(s.profiles as any).first_name} ${(s.profiles as any).last_name}` : 'N/A'
-  })) as Schedule[];
+  return data.map(s => {
+    const profile = s.profiles as any;
+    return {
+      ...s,
+      user_name: profile ? `${profile.first_name} ${profile.last_name}` : 'N/A'
+    };
+  }) as Schedule[];
 };
 
 export const useSchedules = (userId?: string, isAdmin: boolean = false) => {
   return useQuery({
     queryKey: ['schedules', userId, isAdmin],
     queryFn: () => fetchSchedules(userId, isAdmin),
+    enabled: !!userId, // Só executa se tivermos o ID do usuário
     refetchInterval: 30000,
   });
 };
@@ -64,23 +75,24 @@ export const useScheduleDetails = (scheduleId: string | undefined) => {
     queryFn: async () => {
       if (!scheduleId) return null;
       
-      // 1. Buscar Cronograma e seus Itens
       const { data: schedule, error: sError } = await supabase
         .from('schedules')
-        .select('*, profiles(first_name, last_name), schedule_items(*)')
+        .select(`
+          *,
+          profiles:user_id (first_name, last_name),
+          schedule_items (*)
+        `)
         .eq('id', scheduleId)
         .single();
       
       if (sError) throw sError;
 
-      // 2. Buscar TODAS as demandas para cruzar
       const { data: demands, error: dError } = await supabase
         .from('demands_with_details')
         .select('*');
       
       if (dError) throw dError;
 
-      // 3. Filtrar demandas que batem com os critérios do cronograma
       const items = schedule.schedule_items as ScheduleItem[];
       const relatedDemands = demands.filter(demand => {
         return items.some(item => {
@@ -93,7 +105,6 @@ export const useScheduleDetails = (scheduleId: string | undefined) => {
         });
       });
 
-      // 4. Calcular Estatísticas
       const total = relatedDemands.length;
       const resolved = relatedDemands.filter(d => d.status === 'Resolvido').length;
       const pending = total - resolved;
@@ -105,7 +116,6 @@ export const useScheduleDetails = (scheduleId: string | undefined) => {
       const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       const isExpired = daysRemaining < 0;
 
-      // Cálculo tempo médio (simples)
       const resolvedWithDates = relatedDemands.filter(d => d.status === 'Resolvido' && d.resolved_at);
       let avgTime = 'N/A';
       if (resolvedWithDates.length > 0) {
@@ -130,10 +140,11 @@ export const useScheduleDetails = (scheduleId: string | undefined) => {
         statusColor = 'text-blue-500';
       }
 
+      const profile = schedule.profiles as any;
       return {
         schedule: {
           ...schedule,
-          user_name: schedule.profiles ? `${(schedule.profiles as any).first_name} ${(schedule.profiles as any).last_name}` : 'N/A'
+          user_name: profile ? `${profile.first_name} ${profile.last_name}` : 'N/A'
         } as Schedule,
         demands: relatedDemands as DemandDetail[],
         stats: {
