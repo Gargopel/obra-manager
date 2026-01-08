@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckSquare, Plus, Loader2, Calendar, Target, User, Trash2, LayoutDashboard, ChevronRight } from 'lucide-react';
+import { CheckSquare, Plus, Loader2, Calendar, Target, User, Trash2, LayoutDashboard, ChevronRight, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +20,9 @@ const SchedulesPage: React.FC = () => {
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | null>(null);
+
+  const schedulesCount = schedules?.length || 0;
+  const canCreate = isAdmin || schedulesCount < 3;
 
   React.useEffect(() => {
     if (siteConfig?.site_name) document.title = siteConfig.site_name + ' - Cronogramas';
@@ -51,12 +54,28 @@ const SchedulesPage: React.FC = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-wrap justify-between items-center gap-4">
-        <h1 className="text-3xl font-black text-foreground/90 backdrop-blur-sm p-2 rounded-lg uppercase tracking-tighter">
-          <CheckSquare className="inline-block w-8 h-8 mr-2 text-primary" />
-          Meus Cronogramas e Metas
-        </h1>
-        <Button onClick={() => setIsCreateOpen(true)} className="shadow-lg shadow-primary/20 h-12 px-6 font-bold">
-          <Plus className="w-5 h-5 mr-2" /> Novo Cronograma
+        <div>
+          <h1 className="text-3xl font-black text-foreground/90 backdrop-blur-sm p-2 rounded-lg uppercase tracking-tighter">
+            <CheckSquare className="inline-block w-8 h-8 mr-2 text-primary" />
+            Cronogramas e Metas
+          </h1>
+          {!isAdmin && (
+            <p className="text-xs font-bold text-muted-foreground mt-1 ml-2">
+              Utilizados: {schedulesCount} de 3 cronogramas permitidos.
+            </p>
+          )}
+        </div>
+        
+        <Button 
+          onClick={() => setIsCreateOpen(true)} 
+          disabled={!canCreate}
+          className={`shadow-lg h-12 px-6 font-bold ${!canCreate ? 'bg-muted' : 'shadow-primary/20'}`}
+        >
+          {canCreate ? (
+            <><Plus className="w-5 h-5 mr-2" /> Novo Cronograma</>
+          ) : (
+            <><AlertCircle className="w-5 h-5 mr-2" /> Limite de 3 Atingido</>
+          )}
         </Button>
       </div>
 
@@ -88,12 +107,12 @@ const SchedulesPage: React.FC = () => {
                 {schedule.title}
               </CardTitle>
               {isAdmin && (
-                <div className="flex items-center text-xs text-muted-foreground mt-2">
+                <div className="flex items-center text-xs text-muted-foreground mt-2 font-bold">
                   <User className="w-3 h-3 mr-1" /> Resp: {schedule.user_name}
                 </div>
               )}
             </CardHeader>
-            <CardFooter className="pt-0 flex justify-between items-center text-xs font-bold text-muted-foreground border-t bg-accent/5 p-4">
+            <CardFooter className="pt-0 flex justify-between items-center text-[10px] font-black text-muted-foreground border-t bg-accent/5 p-4 uppercase tracking-wider">
                <div className="flex items-center gap-1">
                   <LayoutDashboard className="w-3 h-3" /> Dashboard de Metas
                </div>

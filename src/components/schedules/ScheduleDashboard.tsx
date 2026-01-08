@@ -4,11 +4,14 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useScheduleDetails } from '@/hooks/use-schedules';
-import { Loader2, Calendar, Clock, CheckCircle2, AlertTriangle, FileText, ArrowLeft, Target, TrendingUp } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Loader2, Calendar, Clock, CheckCircle2, AlertTriangle, FileText, ArrowLeft, Target, TrendingUp, RotateCcw } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { exportToPdf } from '@/utils/pdf-export';
+import { supabase } from '@/integrations/supabase/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { showSuccess, showError } from '@/utils/toast';
 
 interface ScheduleDashboardProps {
   scheduleId: string;
@@ -16,7 +19,29 @@ interface ScheduleDashboardProps {
 }
 
 const ScheduleDashboard: React.FC<ScheduleDashboardProps> = ({ scheduleId, onBack }) => {
+  const queryClient = useQueryClient();
   const { data, isLoading, error } = useScheduleDetails(scheduleId);
+
+  // Mutation para atualizar o status da demanda diretamente aqui
+  const updateDemandMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string, status: 'Pendente' | 'Resolvido' }) => {
+      const { error } = await supabase
+        .from('demands')
+        .update({ 
+          status,
+          resolved_at: status === 'Resolvido' ? new Date().toISOString() : null
+        })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['schedule', scheduleId] });
+      queryClient.invalidateQueries({ queryKey: ['demands'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardData'] });
+      showSuccess('Status atualizado com sucesso!');
+    },
+    onError: (err: any) => showError('Erro ao atualizar: ' + err.message)
+  });
 
   if (isLoading) return <div className="flex justify-center p-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
   if (error || !data) return <div className="text-red-500">Erro ao carregar dashboard.</div>;
@@ -150,21 +175,45 @@ const ScheduleDashboard: React.FC<ScheduleDashboardProps> = ({ scheduleId, onBac
       <Card className="backdrop-blur-md bg-white/70 dark:bg-gray-800/70 border-white/20">
         <CardHeader>
           <CardTitle>Listagem de Tarefas do Escopo</CardTitle>
-          <CardDescription>Todas as demandas identificadas que compõem este cronograma.</CardDescription>
+          <CardDescription>Todas as demandas identificadas que compõem este cronograma. Mude o status clicando nos botões.</CardDescription>
         </CardHeader>
         <CardContent>
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {demands.map(demand => (
-                <div key={demand.id} className="p-4 border rounded-xl bg-background/50 flex justify-between items-center group hover:border-primary transition-all">
-                  <div>
-                    <p className="text-sm font-black">{demand.block_id} - Apto {demand.apartment_number}</p>
-                    <p className="text-xs text-muted-foreground">{demand.service_type_name}</p>
+              {demands.map(demand => {
+                const isItemPending = demand.status === 'Pendente';
+                return (
+                  <div key={demand.id} className="p-4 border rounded-xl bg-background/50 flex justify-between items-center group hover:border-primary transition-all shadow-sm">
+                    <div className="flex-1 mr-4">
+                      <p className="text-sm font-black uppercase">{demand.block_id} - {demand.apartment_number}</p>
+                      <p className="text-xs text-muted-foreground font-medium">{demand.service_type_name}</p>
+                      <p className="text-[10px] text-muted-foreground italic truncate max-w-[150px]">{demand.description || 'Sem descrição'}</p>
+                    </div>
+                    
+                    <div className="flex shrink-0">
+                      {isItemPending ? (
+                        <Button 
+                          size="sm" 
+                          onClick={() => updateDemandMutation.mutate({ id: demand.id, status: 'Resolvido' })}
+                          className="bg-green-600 hover:bg-green-700 text-white h-8 text-[10px] font-bold uppercase"
+                          disabled={updateDemandMutation.isPending}
+                        >
+                          Resolver
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => updateDemandMutation.mutate({ id: demand.id, status: 'Pendente' })}
+                          className="border-yellow-500 text-yellow-600 hover:bg-yellow-50 h-8 text-[10px] font-bold uppercase"
+                          disabled={updateDemandMutation.isPending}
+                        >
+                          <RotateCcw className="w-3 h-3 mr-1" /> Reabrir
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <Badge variant={demand.status === 'Resolvido' ? 'outline' : 'default'} className={demand.status === 'Resolvido' ? 'border-green-500 text-green-500' : 'bg-yellow-500'}>
-                    {demand.status}
-                  </Badge>
-                </div>
-              ))}
+                );
+              })}
               {demands.length === 0 && <p className="col-span-full text-center py-10 text-muted-foreground italic">Nenhuma demanda encontrada para este escopo selecionado.</p>}
            </div>
         </CardContent>
