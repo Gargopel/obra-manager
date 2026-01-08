@@ -1,18 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Plus, Trash2, BrickWall, LayoutGrid } from 'lucide-react';
+import { Loader2, Plus, Trash2, LayoutGrid } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import useConfigData from '@/hooks/use-config-data';
 import { APARTMENT_NUMBERS } from '@/utils/construction-structure';
 
@@ -37,9 +36,10 @@ const ManageCeramicLots: React.FC = () => {
   const { data: lots, isLoading } = useQuery({
     queryKey: ['ceramicLots', selectedBlockId],
     queryFn: async () => {
+      if (!selectedBlockId) return [];
       const { data, error } = await supabase.from('ceramic_lots').select('*').eq('block_id', selectedBlockId);
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!selectedBlockId
   });
@@ -188,20 +188,28 @@ const ManageCeramicLots: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {lots?.slice(0, 10).map((lot: any) => (
-                    <TableRow key={lot.id}>
-                      <TableCell className="text-xs font-medium">
-                        {lot.location} {lot.apartment_number || `${lot.floor_number}º Andar`}
-                      </TableCell>
-                      <TableCell className="text-xs">{lot.lot_number}</TableCell>
-                      <TableCell className="text-xs">{lot.product_name}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(lot.id)} className="h-8 w-8 text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                  {lots && lots.length > 0 ? (
+                    lots.slice(0, 10).map((lot: any) => (
+                      <TableRow key={lot.id}>
+                        <TableCell className="text-xs font-medium">
+                          {lot.location} {lot.apartment_number || `${lot.floor_number}º Andar`}
+                        </TableCell>
+                        <TableCell className="text-xs">{lot.lot_number}</TableCell>
+                        <TableCell className="text-xs">{lot.product_name}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(lot.id)} className="h-8 w-8 text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                        Nenhum registro encontrado para este bloco.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>
