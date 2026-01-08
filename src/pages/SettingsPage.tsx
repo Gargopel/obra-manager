@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
-import { Settings, Users, Wrench, Home, Lock, User, Building, Globe, BrickWall, PaintBucket, DoorOpen, DoorClosed, HardHat, FileText } from 'lucide-react';
+import { Settings, Users, Wrench, Home, Lock, User, Building, Globe, BrickWall, PaintBucket, DoorOpen, DoorClosed, HardHat, FileText, QrCode } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import ManageUsers from '@/components/settings/ManageUsers';
 import ManageConfig from '@/components/settings/ManageConfig';
-import ManageServiceTypes from '@/components/settings/ManageServiceTypes'; // Novo
+import ManageServiceTypes from '@/components/settings/ManageServiceTypes';
 import { Card } from '@/components/ui/card';
 import UserProfile from '@/components/settings/UserProfile';
 import ManageBlocks from '@/components/settings/ManageBlocks';
@@ -16,6 +16,7 @@ import ManagePainters from '@/components/settings/ManagePainters';
 import ManageOpeningTypes from '@/components/settings/ManageOpeningTypes';
 import ManageDoorTypes from '@/components/settings/ManageDoorTypes';
 import ManageContractors from '@/components/settings/ManageContractors';
+import ManageUnitQRCodes from '@/components/settings/ManageUnitQRCodes'; // Novo
 import useSiteConfig from '@/hooks/use-site-config';
 import { exportManualToPdf } from '@/utils/pdf-export';
 
@@ -63,7 +64,7 @@ const SettingsPage: React.FC = () => {
       </div>
       
       <Tabs defaultValue={initialTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-11 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-12 backdrop-blur-sm bg-white/70 dark:bg-gray-800/70 border border-white/30 dark:border-gray-700/50">
           <TabsTrigger value="profile"><User className="w-4 h-4 mr-2" /> Perfil</TabsTrigger>
           <TabsTrigger value="users"><Users className="w-4 h-4 mr-2" /> Usuários</TabsTrigger>
           <TabsTrigger value="blocks"><Building className="w-4 h-4 mr-2" /> Blocos</TabsTrigger>
@@ -74,6 +75,7 @@ const SettingsPage: React.FC = () => {
           <TabsTrigger value="ceramic-lots"><BrickWall className="w-4 h-4 mr-2" /> Cerâm.</TabsTrigger>
           <TabsTrigger value="opening-types"><DoorOpen className="w-4 h-4 mr-2" /> Abert.</TabsTrigger>
           <TabsTrigger value="door-types"><DoorClosed className="w-4 h-4 mr-2" /> Portas</TabsTrigger>
+          <TabsTrigger value="qrcodes"><QrCode className="w-4 h-4 mr-2" /> QR Codes</TabsTrigger>
           <TabsTrigger value="site"><Globe className="w-4 h-4 mr-2" /> Site</TabsTrigger>
         </TabsList>
         
@@ -87,6 +89,7 @@ const SettingsPage: React.FC = () => {
         <TabsContent value="ceramic-lots" className="mt-6"><ManageCeramicLots /></TabsContent>
         <TabsContent value="opening-types" className="mt-6"><ManageOpeningTypes /></TabsContent>
         <TabsContent value="door-types" className="mt-6"><ManageDoorTypes /></TabsContent>
+        <TabsContent value="qrcodes" className="mt-6"><ManageUnitQRCodes /></TabsContent>
         <TabsContent value="site" className="mt-6"><ManageSiteConfig /></TabsContent>
       </Tabs>
     </div>

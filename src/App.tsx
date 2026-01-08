@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster as Sonner } from "@/components/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -17,10 +17,11 @@ import PaintingsPage from "./pages/PaintingsPage";
 import OpeningsPage from "./pages/OpeningsPage";
 import DoorsPage from "./pages/DoorsPage";
 import EmployeesPage from "./pages/EmployeesPage";
+import SchedulesPage from "./pages/SchedulesPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import SyncPage from "./pages/SyncPage";
-import SchedulesPage from "./pages/SchedulesPage"; // Novo
+import UnitHubPage from "./pages/UnitHubPage"; // Novo
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -64,6 +65,7 @@ const AppRoutes = () => {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/sync" element={<SyncPage />} />
+        <Route path="/unit/:blockId/:unitId" element={<UnitHubPage />} /> {/* Nova Rota */}
       </Route>
 
       <Route path="*" element={<NotFound />} />
