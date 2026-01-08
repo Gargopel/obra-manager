@@ -12,9 +12,8 @@ import React from 'react';
 const Login = () => {
   const navigate = useNavigate();
   const { session, isLoading, user } = useSession();
-  const { data: siteConfig, isLoading: isLoadingConfig } = useSiteConfig(); // Capturando isLoadingConfig
+  const { data: siteConfig, isLoading: isLoadingConfig } = useSiteConfig(); 
   
-  // Hook de bootstrap: tenta promover o usuário se for admin@teste.com
   useAdminBootstrap(user?.email);
   
   React.useEffect(() => {
@@ -23,13 +22,11 @@ const Login = () => {
     }
   }, [siteConfig]);
 
-  // Redireciona se já estiver logado
   if (!isLoading && session) {
     navigate('/');
     return null;
   }
 
-  // Se estiver carregando a sessão OU a configuração do site, mostre o loader
   if (isLoading || isLoadingConfig) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -38,9 +35,9 @@ const Login = () => {
     );
   }
   
-  // Otimizando a URL da imagem de fundo de login
+  // Otimizando a imagem de fundo de login
   const loginBgUrl = siteConfig?.login_background_url 
-    ? `${siteConfig.login_background_url}?quality=70` // Adiciona parâmetro de qualidade
+    ? `${siteConfig.login_background_url}?quality=70` 
     : undefined;
     
   const loginBgStyle = loginBgUrl
@@ -73,7 +70,7 @@ const Login = () => {
                 },
               },
             }}
-            theme="light" // Using light theme for Auth UI, relying on Card background for dark mode effect
+            theme="light"
             view="sign_in"
             localization={{
               variables: {
@@ -82,7 +79,7 @@ const Login = () => {
                   password_label: 'Senha',
                   button_label: 'Entrar',
                   social_provider_text: 'Entrar com {{provider}}',
-                  link_text: 'Não tem uma conta? Cadastre-se', // Alterado para Cadastre-se
+                  link_text: 'Não tem uma conta? Cadastre-se',
                 },
                 sign_up: {
                   email_label: 'Email',

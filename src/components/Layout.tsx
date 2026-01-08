@@ -10,8 +10,9 @@ const Layout: React.FC = () => {
   const { data: siteConfig } = useSiteConfig();
   const isMobile = useIsMobile();
   
+  // Otimizando a URL da imagem de fundo principal
   const mainBgUrl = siteConfig?.main_background_url 
-    ? `${siteConfig.main_background_url}?quality=70`
+    ? `${siteConfig.main_background_url}?quality=70` // Reduz qualidade para performance
     : undefined;
     
   const mainBgStyle = mainBgUrl
@@ -26,6 +27,7 @@ const Layout: React.FC = () => {
         {isMobile && <MobileSidebar />}
 
         <main className="flex-1 p-4 md:p-8 overflow-y-auto relative z-10">
+          {/* Fallback de gradiente se não houver imagem */}
           {!siteConfig?.main_background_url && (
             <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
               <div className="w-96 h-96 bg-blue-400/10 dark:bg-blue-600/10 rounded-full mix-blend-multiply filter blur-3xl opacity-50 absolute top-10 left-10"></div>
